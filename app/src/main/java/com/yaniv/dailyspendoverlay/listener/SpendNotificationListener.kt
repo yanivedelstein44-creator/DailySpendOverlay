@@ -145,7 +145,7 @@ class SpendNotificationListener : NotificationListenerService() {
                         totalMinor = total,
                         budgetMinor = budget,
                         homeCurrency = home,
-                        justCrossed = result.previousTotalMinor <= budget && total > budget,
+                        justCrossed = budget > 0 && result.previousTotalMinor <= budget && total > budget,
                     )
                 )
             }

@@ -314,12 +314,46 @@
         <!-- ===== מקורות ===== -->
         <LinearLayout style="@style/DS.Card">
 
+            <!-- כותרת שנלחצת: פותחת / סוגרת את הרשימה -->
+            <LinearLayout
+                android:id="@+id/sourcesHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="44dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/DS.CardTitle"
+                    android:layout_width="0dp"
+                    android:layout_marginBottom="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/sources_title" />
+
+                <TextView
+                    android:id="@+id/tvSourcesArrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="▾"
+                    android:textColor="@color/accent"
+                    android:textSize="22sp" />
+            </LinearLayout>
+
             <TextView
-                style="@style/DS.CardTitle"
-                android:text="@string/sources_title" />
+                android:id="@+id/tvSourcesSummary"
+                style="@style/DS.Body"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:id="@+id/sourcesBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
             <TextView
                 style="@style/DS.Body"
+                android:layout_marginTop="6dp"
                 android:text="@string/sources_note"
                 android:textSize="13sp" />
 
@@ -362,6 +396,7 @@
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:text="@string/btn_defaults" />
+            </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 

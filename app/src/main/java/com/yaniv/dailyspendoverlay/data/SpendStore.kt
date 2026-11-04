@@ -56,7 +56,8 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_BRIGHTNESS = "theme_brightness"
         private const val KEY_OVERLAY_FULL = "overlay_full"
 
-        const val DEFAULT_BUDGET_MINOR = 250_00L
+        /** ברירת מחדל: אין תקציב (0). המשתמש מגדיר אם רוצה */
+        const val DEFAULT_BUDGET_MINOR = 0L
 
         @Volatile
         private var instance: SpendStore? = null
@@ -203,7 +204,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
     // תקציב ומטבע ראשי
     // ------------------------------------------------------------------
 
-    /** התקציב היומי, במטבע הראשי (אגורות/סנטים) */
+    /** התקציב היומי, במטבע הראשי (אגורות/סנטים). 0 = בלי תקציב */
     var budgetMinor: Long
         get() = preferences.getLong(KEY_BUDGET, DEFAULT_BUDGET_MINOR)
         set(value) {

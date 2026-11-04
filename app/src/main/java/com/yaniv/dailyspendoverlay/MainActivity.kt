@@ -87,6 +87,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var seekBrightness: SeekBar
     private lateinit var swOverlayFull: Switch
     private lateinit var etRules: EditText
+    private lateinit var sourcesHeader: View
+    private lateinit var sourcesBody: View
+    private lateinit var tvSourcesArrow: TextView
+    private lateinit var tvSourcesSummary: TextView
     private lateinit var tvLogEmpty: TextView
     private lateinit var logContainer: LinearLayout
     private lateinit var tvInstalledVersion: TextView
@@ -217,6 +221,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         seekBrightness = findViewById(R.id.seekBrightness)
         swOverlayFull = findViewById(R.id.swOverlayFull)
         etRules = findViewById(R.id.etRules)
+        sourcesHeader = findViewById(R.id.sourcesHeader)
+        sourcesBody = findViewById(R.id.sourcesBody)
+        tvSourcesArrow = findViewById(R.id.tvSourcesArrow)
+        tvSourcesSummary = findViewById(R.id.tvSourcesSummary)
         tvLogEmpty = findViewById(R.id.tvLogEmpty)
         logContainer = findViewById(R.id.logContainer)
         tvInstalledVersion = findViewById(R.id.tvInstalledVersion)
@@ -255,7 +263,12 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             else -> getString(R.string.today_details_many, today.count, Money.format(last))
         }
         OverlayManager.applyProgress(this, progressToday, status)
-        tvTodayBudget.text = OverlayManager.budgetLine(this, status, home)
+        progressToday.visibility = if (status.hasBudget) View.VISIBLE else View.GONE
+        tvTodayBudget.text = if (status.hasBudget) {
+            OverlayManager.budgetLine(this, status, home)
+        } else {
+            getString(R.string.today_no_budget)
+        }
         cardToday.background = OverlayManager.cardBackground(this, status.isOver, cornerDp = 18f)
     }
 
@@ -267,8 +280,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             return
         }
         val home = store.homeCurrency
-        val budget = store.budgetMinor
         val total = store.todaySnapshot().totalMinor
+        // בלי תקציב מוגדר: "תצוגת חריגה" משתמשת בתקציב לדוגמה, רק לתצוגה
+        val budget = if (store.budgetMinor > 0) store.budgetMinor else if (over) total + 30_00L else 0L
         val sampleMinor = if (over) maxOf(budget - total + 62_00L, 45_90L) else 45_90L
         val newTotal = total + sampleMinor
         OverlayManager.show(
@@ -279,7 +293,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
                 totalMinor = newTotal,
                 budgetMinor = budget,
                 homeCurrency = home,
-                justCrossed = total <= budget && newTotal > budget,
+                justCrossed = budget > 0 && total <= budget && newTotal > budget,
                 isPreview = true,
             )
         )
@@ -316,14 +330,15 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
 
     private fun setupBudgetAndCurrency() {
         findViewById<Button>(R.id.btnSaveBudget).setOnClickListener {
-            val value = Money.parseToMinor(etBudget.text.toString())
-            if (value == null || value <= 0) {
+            val raw = etBudget.text.toString()
+            val value = if (raw.isBlank()) 0L else Money.parseToMinor(raw)
+            if (value == null) {
                 etBudget.error = getString(R.string.budget_invalid)
                 return@setOnClickListener
             }
-            store.budgetMinor = value
+            store.budgetMinor = value // 0 = בלי תקציב
             hideKeyboard()
-            toast(getString(R.string.saved))
+            toast(getString(if (value > 0) R.string.saved else R.string.saved_no_budget))
             refreshToday()
         }
 
@@ -364,7 +379,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
 
     private fun refreshBudgetAndCurrency() {
         val home = Currencies.get(store.homeCurrency)
-        if (!etBudget.hasFocus()) etBudget.setText(Money.formatNumber(store.budgetMinor).replace(",", ""))
+        if (!etBudget.hasFocus()) {
+            etBudget.setText(if (store.budgetMinor > 0) Money.formatNumber(store.budgetMinor).replace(",", "") else "")
+        }
         tvBudgetSymbol.text = home.symbol
         selectCurrentCurrency()
         suppressSwitchCallbacks = true
@@ -436,16 +453,21 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
 
     private fun setupRules() {
         etRules.setText(store.rulesText)
+        // הרשימה ארוכה – סגורה כברירת מחדל, נפתחת בלחיצה על הכותרת
+        sourcesHeader.setOnClickListener { setSourcesOpen(sourcesBody.visibility != View.VISIBLE) }
+        setSourcesOpen(false)
         findViewById<Button>(R.id.btnSaveRules).setOnClickListener {
             store.rulesText = etRules.text.toString()
             hideKeyboard()
             toast(getString(R.string.saved))
+            refreshSourcesSummary()
             refreshLog()
         }
         findViewById<Button>(R.id.btnDefaultRules).setOnClickListener {
             confirm(getString(R.string.defaults_confirm)) {
                 store.rulesText = SourceRules.DEFAULT_TEXT
                 etRules.setText(store.rulesText)
+                refreshSourcesSummary()
                 refreshLog()
             }
         }
@@ -497,7 +519,21 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         store.rulesText = SourceRules.appendRule(store.rulesText, line, entry.appLabel)
         etRules.setText(store.rulesText)
         toast(getString(R.string.rule_added, line))
+        refreshSourcesSummary()
         refreshLog()
+    }
+
+    private fun setSourcesOpen(open: Boolean) {
+        sourcesBody.visibility = if (open) View.VISIBLE else View.GONE
+        tvSourcesArrow.text = if (open) "▴" else "▾"
+        if (!open) hideKeyboard()
+        refreshSourcesSummary()
+    }
+
+    private fun refreshSourcesSummary() {
+        val open = sourcesBody.visibility == View.VISIBLE
+        val count = store.rulesText.lines().count { it.isNotBlank() && !it.trimStart().startsWith("#") }
+        tvSourcesSummary.text = if (open) getString(R.string.sources_summary_open) else getString(R.string.sources_summary, count)
     }
 
     // ==================================================================

@@ -61,7 +61,8 @@ data class OverlayInfo(
 /**
  * החלונית הצפה.
  *  • מוצגת מעל כל האפליקציות (TYPE_APPLICATION_OVERLAY, דורש SYSTEM_ALERT_WINDOW).
- *  • לא לוקחת פוקוס ולא דורשת שום פעולה – נעלמת לבד אחרי 4 שניות.
+ *  • לא לוקחת פוקוס ולא דורשת שום פעולה – נעלמת לבד אחרי 4 שניות (או מיד בנגיעה בה).
+ *  • אטומה לגמרי: חלונית שאי אפשר לגעת בה מקבלת מהמערכת 20% שקיפות, ולכן היא כן ניתנת לנגיעה.
  *  • כחול רגוע כל עוד הסכום היומי לא עבר את התקציב; אדום בולט (עם מסגרת לבנה) מעל התקציב.
  *  • אם מגיעה עסקה נוספת בזמן שהחלונית מוצגת – התוכן מתעדכן והטיימר מתחיל מחדש.
  *
@@ -128,6 +129,7 @@ object OverlayManager {
         val wm = ctx.getSystemService(WindowManager::class.java)
         val themed = ContextThemeWrapper(ctx, R.style.Theme_DailySpend_Overlay)
         val view = LayoutInflater.from(themed).inflate(R.layout.overlay_spend, null, false)
+        view.setOnClickListener { dismissNow() } // נגיעה בחלונית סוגרת אותה מיד
         wm.addView(view, buildParams(ctx, full))
         windowManager = wm
         root = view
@@ -171,8 +173,10 @@ object OverlayManager {
             width,
             if (full) WindowManager.LayoutParams.MATCH_PARENT else WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            // בכוונה בלי FLAG_NOT_TOUCHABLE: אנדרואיד 12+ מוסיפה אוטומטית 20% שקיפות לחלונית כזו.
+            // NOT_TOUCH_MODAL = נגיעות מחוץ לחלונית ממשיכות לאפליקציה שמאחור.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
@@ -239,8 +243,11 @@ object OverlayManager {
 
         val progress = view.findViewById<ProgressBar>(R.id.overlayProgress)
         applyProgress(ctx, progress, status)
+        progress.visibility = if (status.hasBudget) View.VISIBLE else View.GONE
 
-        view.findViewById<TextView>(R.id.overlayBudgetLine).text = budgetLine(ctx, status, info.homeCurrency)
+        val budgetView = view.findViewById<TextView>(R.id.overlayBudgetLine)
+        budgetView.visibility = if (status.hasBudget) View.VISIBLE else View.GONE
+        if (status.hasBudget) budgetView.text = budgetLine(ctx, status, info.homeCurrency)
 
         if (status.isOver && info.justCrossed) pulse(card)
     }
@@ -288,6 +295,11 @@ object OverlayManager {
         }
 
     // ------------------------------------------------------------------
+
+    private fun dismissNow() {
+        main.removeCallbacks(hideRunnable)
+        hide()
+    }
 
     private fun hide() {
         val view = root ?: return

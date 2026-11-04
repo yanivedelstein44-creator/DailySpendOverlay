@@ -126,6 +126,14 @@ class DailyLedgerTest {
         assertEquals(-6200L, BudgetStatus(31200, 25000).remainingMinor)
     }
 
+    @Test fun noBudgetMeansNeverOver() {
+        val s = BudgetStatus(999_999, 0)
+        assertTrue(!s.hasBudget)
+        assertTrue(!s.isOver)
+        assertEquals(0, s.percent)
+        assertTrue(BudgetStatus(1, 25000).hasBudget)
+    }
+
     @Test fun recentEncodingRoundTrip() {
         val list = listOf(RecentAmount("ILS:4590", 123L, 4590L, true), RecentAmount("USD:1250", 456L, 0L, false))
         assertEquals(list, DailyLedger.decodeRecent(DailyLedger.encodeRecent(list)))

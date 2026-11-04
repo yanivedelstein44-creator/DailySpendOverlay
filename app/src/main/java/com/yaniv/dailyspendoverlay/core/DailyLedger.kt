@@ -47,14 +47,17 @@ sealed interface LedgerResult {
 
 /** מצב התקציב לתצוגה (חלונית + מסך ראשי) */
 data class BudgetStatus(val totalMinor: Long, val budgetMinor: Long) {
-    /** "עובר את התקציב" = גדול ממש מהתקציב. בדיוק על התקציב עדיין רגוע. */
-    val isOver: Boolean get() = totalMinor > budgetMinor
+    /** תקציב 0 = לא הוגדר תקציב: אין חריגה, אין פס התקדמות */
+    val hasBudget: Boolean get() = budgetMinor > 0
+
+    /** "עובר את התקציב" = גדול ממש מהתקציב. בדיוק על התקציב עדיין רגוע. בלי תקציב – אף פעם לא. */
+    val isOver: Boolean get() = hasBudget && totalMinor > budgetMinor
 
     /** חיובי = כמה נשאר; שלילי = בכמה עברנו */
     val remainingMinor: Long get() = budgetMinor - totalMinor
 
     val percent: Int
-        get() = if (budgetMinor <= 0) 100 else ((totalMinor * 100) / budgetMinor).coerceIn(0, 999).toInt()
+        get() = if (budgetMinor <= 0) 0 else ((totalMinor * 100) / budgetMinor).coerceIn(0, 999).toInt()
 }
 
 /**

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Cash Effect</string>
     <string name="listener_label">Cash Effect – זיהוי תשלומים</string>
-    <string name="app_tagline">מציגה לך בגדול כמה הוצאת היום – מיד אחרי כל תשלום.</string>
+    <string name="app_tagline">נועדה לדמות את אפקט המזומן: במזומן מרגישים את הכסף יוצא מהיד, בכרטיס או בטלפון לא. Cash Effect מחזירה את התחושה הזו.\n\n• אחרי כל תשלום קופצת חלונית גדולה עם הסכום והסך של היום\n• היא קוראת התראות תשלום מהטלפון (אשראי, ארנקים, SMS)\n• אפשר להגדיר תקציב יומי – מעליו החלונית נצבעת באדום\n• הכל נשאר בטלפון: בלי שרת ובלי חשבון</string>
     <string name="version_fmt">גרסה %1$s (%2$d)</string>
 
     <!-- היום -->
@@ -47,8 +47,8 @@
 
     <!-- תקציב -->
     <string name="budget_title">תקציב ומטבע</string>
-    <string name="budget_hint">250</string>
-    <string name="budget_note">מעל התקציב היומי החלונית הופכת לאדומה. קניות במטבע זר מומרות אוטומטית למטבע הראשי.</string>
+    <string name="budget_hint">ללא תקציב</string>
+    <string name="budget_note">בלי תקציב החלונית מציגה רק את הסכום של היום. אם מגדירים תקציב יומי, היא נצבעת באדום כשעוברים אותו. כדי לבטל תקציב – מוחקים את הסכום ולוחצים שמור. קניות במטבע זר מומרות אוטומטית למטבע הראשי.</string>
     <string name="home_currency_label">מטבע ראשי</string>
     <string name="exclude_installments_switch">להציג רק הוצאות יומיות (בלי עסקאות בתשלומים)</string>
     <string name="exclude_installments_note">כשהמתג דלוק, קנייה בתשלומים (למשל "ב-12 תשלומים") לא נספרת בכלל בסכום היומי. כשהוא כבוי – היא נספרת במלואה ביום הקנייה.</string>
@@ -57,6 +57,8 @@
     <string name="currency_change_msg">התקציב והסכום של היום יומרו לפי שער המטבע.</string>
     <string name="btn_save">שמור</string>
     <string name="saved">נשמר ✓</string>
+    <string name="saved_no_budget">התקציב בוטל ✓</string>
+    <string name="today_no_budget">אין תקציב יומי (אפשר להגדיר למטה)</string>
     <string name="budget_invalid">הכנס סכום גדול מ-0</string>
     <string name="shekel">₪</string>
 
@@ -65,11 +67,13 @@
     <string name="appearance_color_label">צבע</string>
     <string name="appearance_brightness">בהירות: %1$d%%</string>
     <string name="appearance_full_switch">חלונית במסך מלא (במקום כרטיס)</string>
-    <string name="appearance_note">הצבע והבהירות חלים כל עוד אתה בתוך התקציב. חריגה תמיד מוצגת באדום בולט, בלי קשר לבהירות.</string>
+    <string name="appearance_note">הצבע והבהירות חלים על החלונית. אם הגדרת תקציב, חריגה ממנו תמיד מוצגת באדום בולט, בלי קשר לבהירות. נגיעה בחלונית סוגרת אותה.</string>
     <string name="appearance_color_selected">%1$s (נבחר)</string>
 
     <!-- מקורות -->
     <string name="sources_title">מקורות תשלום</string>
+    <string name="sources_summary">%1$d מקורות פעילים · לחץ כדי לפתוח ולערוך</string>
+    <string name="sources_summary_open">לחץ על הכותרת כדי לסגור</string>
     <string name="sources_note">שורה לכל מקור. שם חבילה של אפליקציה = כל ההתראות שלה. sms:שולח = הודעות SMS משולח בשם הזה בדיוק. חבילה|מילה = רק התראות שהכותרת שלהן מכילה את המילה. # = הערה.</string>
     <string name="btn_defaults">שחזר ברירת מחדל</string>
     <string name="defaults_confirm">להחליף את הרשימה ברשימת ברירת המחדל? תוספות שלך יימחקו.</string>
