@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- החלונית הצפה. הרקע (כחול רגוע / אדום חריגה) נקבע בקוד ב-OverlayManager. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layoutDirection="rtl"
+    android:padding="6dp">
+
+    <LinearLayout
+        android:id="@+id/overlayCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:id="@+id/overlayHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="viewStart"
+            android:textColor="#E6FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/overlayLastAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textAlignment="viewStart"
+            android:textColor="#FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="20sp" />
+
+        <!-- שורות משנה: "ב-12 תשלומים של 100 ₪" / "≈ 39.10 ₪ לפי שער ECB" -->
+        <TextView
+            android:id="@+id/overlayExtra"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAlignment="viewStart"
+            android:textColor="#D9FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/overlay_today_label"
+            android:textAlignment="viewStart"
+            android:textColor="#CCFFFFFF"
+            android:textDirection="rtl"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/overlayTotal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textAlignment="viewStart"
+            android:textColor="#FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="54sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/overlayProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="12dp"
+            android:max="100"
+            android:maxHeight="10dp"
+            android:minHeight="10dp"
+            android:progressDrawable="@drawable/overlay_progress" />
+
+        <TextView
+            android:id="@+id/overlayBudgetLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAlignment="viewStart"
+            android:textColor="#F2FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>

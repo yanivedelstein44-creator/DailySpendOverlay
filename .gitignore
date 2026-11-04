@@ -1,0 +1,14 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/app/build/
+/captures
+/dist/
+.externalNativeBuild
+.cxx
+
+# סודי: סיסמת מפתח החתימה. לעולם לא להעלות ל-GitHub.
+/keystore/keystore.properties

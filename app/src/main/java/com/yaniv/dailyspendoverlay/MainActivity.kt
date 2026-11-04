@@ -1,0 +1,723 @@
+package com.yaniv.dailyspendoverlay
+
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.content.SharedPreferences
+import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import android.view.View
+import android.view.WindowInsets
+import android.view.inputmethod.InputMethodManager
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.Switch
+import android.widget.TextView
+import android.widget.Toast
+import com.yaniv.dailyspendoverlay.core.Amount
+import com.yaniv.dailyspendoverlay.core.BudgetStatus
+import com.yaniv.dailyspendoverlay.core.Currencies
+import com.yaniv.dailyspendoverlay.core.DetectionEntry
+import com.yaniv.dailyspendoverlay.core.DetectionStatus
+import com.yaniv.dailyspendoverlay.core.FxRates
+import com.yaniv.dailyspendoverlay.core.Money
+import com.yaniv.dailyspendoverlay.core.SourceRules
+import com.yaniv.dailyspendoverlay.data.SpendStore
+import com.yaniv.dailyspendoverlay.net.FxUpdater
+import com.yaniv.dailyspendoverlay.net.OnlinePurpose
+import com.yaniv.dailyspendoverlay.overlay.OverlayInfo
+import com.yaniv.dailyspendoverlay.overlay.OverlayManager
+import com.yaniv.dailyspendoverlay.update.OnlineUpdater
+import com.yaniv.dailyspendoverlay.update.SelfUpdater
+import com.yaniv.dailyspendoverlay.util.Permissions
+import java.io.File
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicBoolean
+
+/**
+ * מסך ההגדרות: הסכום של היום, הרשאות, תקציב ומטבע, מקורות, יומן זיהוי, עדכונים ושערי מטבע.
+ * אין כאן שום עבודה ברקע – המסך רק מציג ומשנה הגדרות. העבודה האמיתית קורית בשירות ההתראות.
+ */
+class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListener {
+
+    companion object {
+        private const val REQ_PICK_APK = 41
+        private const val AUTO_UPDATE_CHECK_INTERVAL_MS = 30L * 60 * 1000
+    }
+
+    private lateinit var store: SpendStore
+    private val updateBusy = AtomicBoolean(false)
+    private val fxBusy = AtomicBoolean(false)
+    private var isResumedNow = false
+    private var suppressSwitchCallbacks = false
+    private var consentDialogOpen = false
+
+    private lateinit var tvVersion: TextView
+    private lateinit var cardToday: View
+    private lateinit var tvTodayTotal: TextView
+    private lateinit var tvTodayDetails: TextView
+    private lateinit var progressToday: ProgressBar
+    private lateinit var tvTodayBudget: TextView
+    private lateinit var tvNotifStatus: TextView
+    private lateinit var btnNotifAccess: Button
+    private lateinit var tvRestrictedHint: TextView
+    private lateinit var btnAppInfo: Button
+    private lateinit var tvOverlayStatus: TextView
+    private lateinit var btnOverlay: Button
+    private lateinit var etBudget: EditText
+    private lateinit var tvBudgetSymbol: TextView
+    private lateinit var spHomeCurrency: Spinner
+    private lateinit var swExcludeInstallments: Switch
+    private lateinit var etRules: EditText
+    private lateinit var tvLogEmpty: TextView
+    private lateinit var logContainer: LinearLayout
+    private lateinit var tvInstalledVersion: TextView
+    private lateinit var swOnlineUpdates: Switch
+    private lateinit var swFxRates: Switch
+    private lateinit var tvUpdateStatus: TextView
+    private lateinit var tvFxStatus: TextView
+    private lateinit var btnCheckNow: Button
+    private lateinit var btnAllowInstall: Button
+
+    // ==================================================================
+    // מחזור חיים
+    // ==================================================================
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContentView(R.layout.activity_main)
+        store = SpendStore.get(this)
+        bindViews()
+        applyInsets()
+        setupToday()
+        setupPermissions()
+        setupBudgetAndCurrency()
+        setupRules()
+        setupLog()
+        setupOnline()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isResumedNow = true
+        store.preferences.registerOnSharedPreferenceChangeListener(this)
+        refreshAll()
+
+        // פעולות אונליין – רק אם המשתמש אישר, ורק כשהמסך פתוח (אין עבודה ברקע)
+        refreshFx(force = false)
+        if (OnlineUpdater.isConfigured && store.consent(OnlinePurpose.UPDATES) == true &&
+            System.currentTimeMillis() - store.lastUpdateCheckMillis > AUTO_UPDATE_CHECK_INTERVAL_MS
+        ) {
+            checkForUpdate(manual = false)
+        }
+        maybeAskConsentOnce()
+    }
+
+    override fun onPause() {
+        isResumedNow = false
+        store.preferences.unregisterOnSharedPreferenceChangeListener(this)
+        super.onPause()
+    }
+
+    /** השירות רשם עסקה בזמן שהמסך פתוח → מרעננים (נקרא על ה-main thread) */
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        refreshToday()
+        refreshLog()
+    }
+
+    private fun refreshAll() {
+        refreshToday()
+        refreshPermissions()
+        refreshBudgetAndCurrency()
+        refreshLog()
+        refreshOnline()
+    }
+
+    // ==================================================================
+    // תצוגה מקצה לקצה (Android 15+) – ריפוד לפי פסי המערכת והמקלדת
+    // ==================================================================
+
+    @Suppress("DEPRECATION")
+    private fun enableEdgeToEdge() {
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        } else {
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        }
+    }
+
+    private fun applyInsets() {
+        val content = findViewById<View>(R.id.content)
+        val base = content.paddingTop
+        findViewById<View>(R.id.rootScroll).setOnApplyWindowInsetsListener { _, insets ->
+            val (left, top, right, bottom) = systemInsets(insets)
+            content.setPadding(base + left, base + top, base + right, base + bottom)
+            insets
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun systemInsets(insets: WindowInsets): List<Int> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val i = insets.getInsets(
+                WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout() or WindowInsets.Type.ime()
+            )
+            listOf(i.left, i.top, i.right, i.bottom)
+        } else {
+            listOf(
+                insets.systemWindowInsetLeft, insets.systemWindowInsetTop,
+                insets.systemWindowInsetRight, insets.systemWindowInsetBottom
+            )
+        }
+
+    private fun bindViews() {
+        tvVersion = findViewById(R.id.tvVersion)
+        cardToday = findViewById(R.id.cardToday)
+        tvTodayTotal = findViewById(R.id.tvTodayTotal)
+        tvTodayDetails = findViewById(R.id.tvTodayDetails)
+        progressToday = findViewById(R.id.progressToday)
+        tvTodayBudget = findViewById(R.id.tvTodayBudget)
+        tvNotifStatus = findViewById(R.id.tvNotifStatus)
+        btnNotifAccess = findViewById(R.id.btnNotifAccess)
+        tvRestrictedHint = findViewById(R.id.tvRestrictedHint)
+        btnAppInfo = findViewById(R.id.btnAppInfo)
+        tvOverlayStatus = findViewById(R.id.tvOverlayStatus)
+        btnOverlay = findViewById(R.id.btnOverlay)
+        etBudget = findViewById(R.id.etBudget)
+        tvBudgetSymbol = findViewById(R.id.tvBudgetSymbol)
+        spHomeCurrency = findViewById(R.id.spHomeCurrency)
+        swExcludeInstallments = findViewById(R.id.swExcludeInstallments)
+        etRules = findViewById(R.id.etRules)
+        tvLogEmpty = findViewById(R.id.tvLogEmpty)
+        logContainer = findViewById(R.id.logContainer)
+        tvInstalledVersion = findViewById(R.id.tvInstalledVersion)
+        swOnlineUpdates = findViewById(R.id.swOnlineUpdates)
+        swFxRates = findViewById(R.id.swFxRates)
+        tvUpdateStatus = findViewById(R.id.tvUpdateStatus)
+        tvFxStatus = findViewById(R.id.tvFxStatus)
+        btnCheckNow = findViewById(R.id.btnCheckNow)
+        btnAllowInstall = findViewById(R.id.btnAllowInstall)
+    }
+
+    // ==================================================================
+    // היום
+    // ==================================================================
+
+    private fun setupToday() {
+        findViewById<Button>(R.id.btnPreviewOk).setOnClickListener { preview(over = false) }
+        findViewById<Button>(R.id.btnPreviewOver).setOnClickListener { preview(over = true) }
+        findViewById<Button>(R.id.btnResetToday).setOnClickListener {
+            confirm(getString(R.string.reset_confirm)) {
+                store.resetToday()
+                refreshToday()
+            }
+        }
+    }
+
+    private fun refreshToday() {
+        val today = store.todaySnapshot()
+        val home = store.homeCurrency
+        val status = BudgetStatus(today.totalMinor, store.budgetMinor)
+        tvTodayTotal.text = Money.format(today.totalMinor, home)
+        val last = today.lastTx
+        tvTodayDetails.text = when {
+            today.count == 0 || last == null -> getString(R.string.today_none)
+            today.count == 1 -> getString(R.string.today_details_one, Money.format(last))
+            else -> getString(R.string.today_details_many, today.count, Money.format(last))
+        }
+        OverlayManager.applyProgress(this, progressToday, status)
+        tvTodayBudget.text = OverlayManager.budgetLine(this, status, home)
+        cardToday.background = OverlayManager.cardBackground(this, status.isOver, cornerDp = 18f)
+    }
+
+    /** תצוגה מקדימה של החלונית – לא נשמרת ולא משנה את הסכום */
+    private fun preview(over: Boolean) {
+        if (!Settings.canDrawOverlays(this)) {
+            toast(getString(R.string.need_overlay_first))
+            Permissions.openOverlaySettings(this)
+            return
+        }
+        val home = store.homeCurrency
+        val budget = store.budgetMinor
+        val total = store.todaySnapshot().totalMinor
+        val sampleMinor = if (over) maxOf(budget - total + 62_00L, 45_90L) else 45_90L
+        val newTotal = total + sampleMinor
+        OverlayManager.show(
+            this,
+            OverlayInfo(
+                lastTx = Amount(sampleMinor, home),
+                lastTxHomeMinor = null,
+                totalMinor = newTotal,
+                budgetMinor = budget,
+                homeCurrency = home,
+                justCrossed = total <= budget && newTotal > budget,
+                isPreview = true,
+            )
+        )
+    }
+
+    // ==================================================================
+    // הרשאות
+    // ==================================================================
+
+    private fun setupPermissions() {
+        btnNotifAccess.setOnClickListener { Permissions.openNotificationAccess(this) }
+        btnOverlay.setOnClickListener { Permissions.openOverlaySettings(this) }
+        btnAppInfo.setOnClickListener { Permissions.openAppDetails(this) }
+    }
+
+    private fun refreshPermissions() {
+        val notif = Permissions.isNotificationListenerEnabled(this)
+        tvNotifStatus.setText(if (notif) R.string.perm_notif_ok else R.string.perm_notif_missing)
+        tvNotifStatus.setTextColor(getColor(if (notif) R.color.ok_green else R.color.warn_red))
+        btnNotifAccess.visibility = if (notif) View.GONE else View.VISIBLE
+        val restricted = !notif && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        tvRestrictedHint.visibility = if (restricted) View.VISIBLE else View.GONE
+        btnAppInfo.visibility = if (restricted) View.VISIBLE else View.GONE
+
+        val overlay = Settings.canDrawOverlays(this)
+        tvOverlayStatus.setText(if (overlay) R.string.perm_overlay_ok else R.string.perm_overlay_missing)
+        tvOverlayStatus.setTextColor(getColor(if (overlay) R.color.ok_green else R.color.warn_red))
+        btnOverlay.visibility = if (overlay) View.GONE else View.VISIBLE
+    }
+
+    // ==================================================================
+    // תקציב, מטבע ראשי, עסקאות בתשלומים
+    // ==================================================================
+
+    private fun setupBudgetAndCurrency() {
+        findViewById<Button>(R.id.btnSaveBudget).setOnClickListener {
+            val value = Money.parseToMinor(etBudget.text.toString())
+            if (value == null || value <= 0) {
+                etBudget.error = getString(R.string.budget_invalid)
+                return@setOnClickListener
+            }
+            store.budgetMinor = value
+            hideKeyboard()
+            toast(getString(R.string.saved))
+            refreshToday()
+        }
+
+        val items = Currencies.ALL.map { getString(R.string.currency_item, it.symbol, it.nameHe, it.code) }
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, items)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spHomeCurrency.adapter = adapter
+        selectCurrentCurrency()
+        spHomeCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val code = Currencies.ALL[position].code
+                if (code == store.homeCurrency) return
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle(getString(R.string.currency_change_title, code))
+                    .setMessage(R.string.currency_change_msg)
+                    .setPositiveButton(R.string.yes) { _, _ ->
+                        store.changeHomeCurrency(code)
+                        refreshBudgetAndCurrency()
+                        refreshToday()
+                    }
+                    .setNegativeButton(R.string.cancel) { _, _ -> selectCurrentCurrency() }
+                    .setOnCancelListener { selectCurrentCurrency() }
+                    .show()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+
+        swExcludeInstallments.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.excludeInstallments = checked
+        }
+    }
+
+    private fun selectCurrentCurrency() {
+        val index = Currencies.ALL.indexOfFirst { it.code == store.homeCurrency }.coerceAtLeast(0)
+        spHomeCurrency.setSelection(index, false)
+    }
+
+    private fun refreshBudgetAndCurrency() {
+        val home = Currencies.get(store.homeCurrency)
+        if (!etBudget.hasFocus()) etBudget.setText(Money.formatNumber(store.budgetMinor).replace(",", ""))
+        tvBudgetSymbol.text = home.symbol
+        selectCurrentCurrency()
+        suppressSwitchCallbacks = true
+        swExcludeInstallments.isChecked = store.excludeInstallments
+        suppressSwitchCallbacks = false
+    }
+
+    // ==================================================================
+    // מקורות
+    // ==================================================================
+
+    private fun setupRules() {
+        etRules.setText(store.rulesText)
+        findViewById<Button>(R.id.btnSaveRules).setOnClickListener {
+            store.rulesText = etRules.text.toString()
+            hideKeyboard()
+            toast(getString(R.string.saved))
+            refreshLog()
+        }
+        findViewById<Button>(R.id.btnDefaultRules).setOnClickListener {
+            confirm(getString(R.string.defaults_confirm)) {
+                store.rulesText = SourceRules.DEFAULT_TEXT
+                etRules.setText(store.rulesText)
+                refreshLog()
+            }
+        }
+    }
+
+    // ==================================================================
+    // יומן זיהוי
+    // ==================================================================
+
+    private fun setupLog() {
+        findViewById<Button>(R.id.btnClearLog).setOnClickListener {
+            store.clearLog()
+            refreshLog()
+        }
+    }
+
+    private fun refreshLog() {
+        logContainer.removeAllViews()
+        val entries = store.readLog()
+        tvLogEmpty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
+        val rules = store.rules()
+        val formatter = DateTimeFormatter.ofPattern("dd/MM HH:mm")
+        for (entry in entries) {
+            val row = layoutInflater.inflate(R.layout.item_detection, logContainer, false)
+            row.findViewById<TextView>(R.id.tvLogTitle).text =
+                listOf(entry.appLabel, Money.format(entry.amount)).joinToString(" · ")
+            val time = Instant.ofEpochMilli(entry.timeMillis).atZone(ZoneId.systemDefault()).format(formatter)
+            row.findViewById<TextView>(R.id.tvLogSub).text =
+                listOf(time, statusText(entry), entry.title).filter { it.isNotBlank() }.joinToString(" · ")
+            val add = row.findViewById<Button>(R.id.btnLogAdd)
+            val canAdd = entry.status == DetectionStatus.NOT_LISTED && !rules.matches(entry.packageName, entry.title)
+            add.visibility = if (canAdd) View.VISIBLE else View.GONE
+            add.setOnClickListener { addRuleFor(entry) }
+            logContainer.addView(row)
+        }
+    }
+
+    private fun statusText(entry: DetectionEntry): String = when (entry.status) {
+        DetectionStatus.COUNTED ->
+            getString(R.string.log_counted) + if (entry.detail.isNotEmpty()) " (${entry.detail})" else ""
+        DetectionStatus.DUPLICATE -> getString(R.string.log_duplicate, entry.detail)
+        DetectionStatus.EXCLUDED -> getString(R.string.log_excluded, entry.detail)
+        DetectionStatus.NOT_LISTED -> getString(R.string.log_not_listed)
+        DetectionStatus.NO_RATE -> getString(R.string.log_no_rate, entry.detail)
+    }
+
+    private fun addRuleFor(entry: DetectionEntry) {
+        val line = SourceRules.ruleLineFor(entry.packageName, entry.title)
+        store.rulesText = SourceRules.appendRule(store.rulesText, line, entry.appLabel)
+        etRules.setText(store.rulesText)
+        toast(getString(R.string.rule_added, line))
+        refreshLog()
+    }
+
+    // ==================================================================
+    // אינטרנט באישור: עדכוני גרסה + שערי מטבע
+    // ==================================================================
+
+    private fun setupOnline() {
+        swOnlineUpdates.setOnCheckedChangeListener { _, checked ->
+            if (suppressSwitchCallbacks) return@setOnCheckedChangeListener
+            store.setConsent(OnlinePurpose.UPDATES, checked)
+            if (checked) checkForUpdate(manual = true)
+        }
+        swFxRates.setOnCheckedChangeListener { _, checked ->
+            if (suppressSwitchCallbacks) return@setOnCheckedChangeListener
+            store.setConsent(OnlinePurpose.FX_RATES, checked)
+            if (checked) refreshFx(force = true)
+        }
+        btnCheckNow.setOnClickListener {
+            if (store.consent(OnlinePurpose.UPDATES) == true) {
+                checkForUpdate(manual = true)
+            } else {
+                askConsent { checkForUpdate(manual = true) }
+            }
+        }
+        findViewById<Button>(R.id.btnPickApk).setOnClickListener { pickApk() }
+        btnAllowInstall.setOnClickListener { Permissions.openUnknownSources(this) }
+    }
+
+    private fun refreshOnline() {
+        val version = SelfUpdater.installedVersion(this)
+        val versionText = getString(R.string.version_fmt, version.name, version.code)
+        tvVersion.text = versionText
+        tvInstalledVersion.text = versionText
+
+        suppressSwitchCallbacks = true
+        swOnlineUpdates.isEnabled = OnlineUpdater.isConfigured
+        swOnlineUpdates.isChecked = OnlineUpdater.isConfigured && store.consent(OnlinePurpose.UPDATES) == true
+        swFxRates.isChecked = store.consent(OnlinePurpose.FX_RATES) == true
+        suppressSwitchCallbacks = false
+
+        btnCheckNow.isEnabled = OnlineUpdater.isConfigured
+        btnCheckNow.alpha = if (OnlineUpdater.isConfigured) 1f else 0.4f
+        if (!OnlineUpdater.isConfigured && tvUpdateStatus.visibility != View.VISIBLE) {
+            showUpdateStatus(getString(R.string.update_online_not_configured))
+        }
+        btnAllowInstall.visibility = if (packageManager.canRequestPackageInstalls()) View.GONE else View.VISIBLE
+        refreshFxStatus()
+    }
+
+    private fun refreshFxStatus() {
+        val online = store.onlineFxTable()
+        tvFxStatus.text = if (online != null) {
+            getString(R.string.fx_status_online, online.date)
+        } else {
+            getString(R.string.fx_status_builtin, FxRates.BUILT_IN.date)
+        }
+    }
+
+    /** חלון ההסכמה – פעם אחת, בפתיחה הראשונה */
+    private fun maybeAskConsentOnce() {
+        val fxUnknown = store.consent(OnlinePurpose.FX_RATES) == null
+        val updatesUnknown = OnlineUpdater.isConfigured && store.consent(OnlinePurpose.UPDATES) == null
+        if (fxUnknown || updatesUnknown) askConsent(null)
+    }
+
+    private fun askConsent(onAllowed: (() -> Unit)?) {
+        if (consentDialogOpen) return
+        consentDialogOpen = true
+        AlertDialog.Builder(this)
+            .setTitle(R.string.update_consent_title)
+            .setMessage(R.string.update_consent_msg)
+            .setCancelable(false)
+            .setPositiveButton(R.string.update_consent_allow) { _, _ ->
+                consentDialogOpen = false
+                store.setConsent(OnlinePurpose.UPDATES, true)
+                store.setConsent(OnlinePurpose.FX_RATES, true)
+                refreshOnline()
+                refreshFx(force = true)
+                if (onAllowed != null) onAllowed() else checkForUpdate(manual = false)
+            }
+            .setNegativeButton(R.string.update_consent_deny) { _, _ ->
+                consentDialogOpen = false
+                if (store.consent(OnlinePurpose.UPDATES) == null) store.setConsent(OnlinePurpose.UPDATES, false)
+                if (store.consent(OnlinePurpose.FX_RATES) == null) store.setConsent(OnlinePurpose.FX_RATES, false)
+                refreshOnline()
+            }
+            .show()
+    }
+
+    private fun refreshFx(force: Boolean) {
+        if (store.consent(OnlinePurpose.FX_RATES) != true) return
+        if (!force && !FxUpdater.isStale(store)) return
+        if (!fxBusy.compareAndSet(false, true)) return
+        val app = applicationContext
+        Thread {
+            val error = try {
+                FxUpdater.refresh(app)
+                null
+            } catch (e: Exception) {
+                e.message ?: e.javaClass.simpleName
+            } finally {
+                fxBusy.set(false)
+            }
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                refreshFxStatus()
+                if (error != null && force) tvFxStatus.text = getString(R.string.fx_refresh_failed, error)
+            }
+        }.start()
+    }
+
+    private fun checkForUpdate(manual: Boolean) {
+        if (!OnlineUpdater.isConfigured || store.consent(OnlinePurpose.UPDATES) != true) return
+        if (!updateBusy.compareAndSet(false, true)) return
+        if (manual) showUpdateStatus(getString(R.string.update_checking))
+        val app = applicationContext
+        Thread {
+            val result = runCatching { OnlineUpdater.fetchLatest(app) }
+            store.lastUpdateCheckMillis = System.currentTimeMillis()
+            updateBusy.set(false)
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                result.onSuccess { remote ->
+                    val current = SelfUpdater.installedVersion(this)
+                    if (remote.versionCode > current.code) {
+                        showUpdateStatus(null)
+                        promptOnlineUpdate(remote, current)
+                    } else {
+                        showUpdateStatus(getString(R.string.update_up_to_date, nowHm()))
+                    }
+                }.onFailure { e ->
+                    if (manual) {
+                        showUpdateStatus(getString(R.string.update_check_failed, e.message ?: e.javaClass.simpleName))
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private fun promptOnlineUpdate(remote: OnlineUpdater.Remote, current: SelfUpdater.Version) {
+        if (!isResumedNow) return
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.update_available_title, remote.versionName))
+            .setMessage(
+                getString(
+                    R.string.update_available_msg,
+                    current.name, current.code, remote.versionName, remote.versionCode,
+                    remote.notes.ifBlank { "—" }
+                )
+            )
+            .setPositiveButton(R.string.btn_install) { _, _ -> downloadAndInstall(remote) }
+            .setNegativeButton(R.string.btn_later, null)
+            .show()
+    }
+
+    private fun downloadAndInstall(remote: OnlineUpdater.Remote) {
+        if (!ensureInstallPermission()) return
+        if (!updateBusy.compareAndSet(false, true)) return
+        showUpdateStatus(getString(R.string.update_downloading, 0))
+        val app = applicationContext
+        Thread {
+            try {
+                val file = OnlineUpdater.download(app, remote) { percent ->
+                    runOnUiThread { showUpdateStatus(getString(R.string.update_downloading, percent)) }
+                }
+                runOnUiThread { showUpdateStatus(getString(R.string.update_verifying)) }
+                when (val check = SelfUpdater.inspect(app, file)) {
+                    is SelfUpdater.Check.Ready -> {
+                        runOnUiThread { showUpdateStatus(getString(R.string.update_installing)) }
+                        SelfUpdater.install(app, check.file)
+                    }
+                    is SelfUpdater.Check.Problem -> runOnUiThread { showUpdateStatus(check.message) }
+                }
+            } catch (e: OnlineUpdater.HashMismatchException) {
+                runOnUiThread { showUpdateStatus(getString(R.string.update_err_hash)) }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    showUpdateStatus(getString(R.string.update_err_generic, e.message ?: e.javaClass.simpleName))
+                }
+            } finally {
+                updateBusy.set(false)
+            }
+        }.start()
+    }
+
+    // ---- עדכון מקובץ (גיבוי בלי אינטרנט) ----
+
+    private fun pickApk() {
+        if (!ensureInstallPermission()) return
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(SelfUpdater.APK_MIME, "application/octet-stream"))
+        }
+        try {
+            startActivityForResult(intent, REQ_PICK_APK)
+        } catch (e: ActivityNotFoundException) {
+            showUpdateStatus(getString(R.string.update_err_read))
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_PICK_APK || resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+        if (!updateBusy.compareAndSet(false, true)) return
+        showUpdateStatus(getString(R.string.update_verifying))
+        val app = applicationContext
+        Thread {
+            val check = try {
+                SelfUpdater.inspect(app, SelfUpdater.copyFromUri(app, uri))
+            } catch (e: Exception) {
+                SelfUpdater.Check.Problem(getString(R.string.update_err_read))
+            } finally {
+                updateBusy.set(false)
+            }
+            runOnUiThread { if (!isDestroyed) onLocalApkChecked(check) }
+        }.start()
+    }
+
+    private fun onLocalApkChecked(check: SelfUpdater.Check) {
+        when (check) {
+            is SelfUpdater.Check.Problem -> showUpdateStatus(check.message)
+            is SelfUpdater.Check.Ready -> {
+                showUpdateStatus(null)
+                val message = if (check.sameVersion) {
+                    getString(R.string.update_same_version, check.current.name)
+                } else {
+                    getString(
+                        R.string.update_dialog_msg,
+                        check.current.name, check.current.code, check.incoming.name, check.incoming.code
+                    )
+                }
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.update_dialog_title)
+                    .setMessage(message)
+                    .setPositiveButton(R.string.btn_install) { _, _ -> installInBackground(check.file) }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            }
+        }
+    }
+
+    private fun installInBackground(file: File) {
+        showUpdateStatus(getString(R.string.update_installing))
+        val app = applicationContext
+        Thread {
+            try {
+                SelfUpdater.install(app, file)
+            } catch (e: Exception) {
+                runOnUiThread { showUpdateStatus(getString(R.string.update_err_generic, e.message ?: "")) }
+            }
+        }.start()
+    }
+
+    private fun ensureInstallPermission(): Boolean {
+        if (packageManager.canRequestPackageInstalls()) return true
+        AlertDialog.Builder(this)
+            .setMessage(R.string.install_permission_needed)
+            .setPositiveButton(R.string.btn_allow_install) { _, _ -> Permissions.openUnknownSources(this) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+        return false
+    }
+
+    // ==================================================================
+    // עזרים
+    // ==================================================================
+
+    private fun showUpdateStatus(text: String?) {
+        tvUpdateStatus.text = text.orEmpty()
+        tvUpdateStatus.visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun confirm(message: String, onYes: () -> Unit) {
+        AlertDialog.Builder(this)
+            .setMessage(message)
+            .setPositiveButton(R.string.yes) { _, _ -> onYes() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun hideKeyboard() {
+        val focused = currentFocus ?: return
+        getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(focused.windowToken, 0)
+        focused.clearFocus()
+    }
+
+    private fun toast(text: String) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun nowHm(): String = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
+}

@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootScroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layoutDirection="rtl"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- ===== כותרת ===== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/DS.Body"
+            android:layout_marginTop="2dp"
+            android:text="@string/app_tagline" />
+
+        <TextView
+            android:id="@+id/tvVersion"
+            style="@style/DS.Body"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="14dp"
+            android:textSize="12sp" />
+
+        <!-- ===== היום (הרקע משתנה: כחול / אדום) ===== -->
+        <LinearLayout
+            android:id="@+id/cardToday"
+            style="@style/DS.Card"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/today_label"
+                android:textColor="#CCFFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvTodayTotal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:textAlignment="viewStart"
+                android:textColor="#FFFFFF"
+                android:textDirection="rtl"
+                android:textSize="46sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvTodayDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#E6FFFFFF"
+                android:textSize="14sp" />
+
+            <ProgressBar
+                android:id="@+id/progressToday"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="10dp"
+                android:layout_marginTop="12dp"
+                android:max="100"
+                android:maxHeight="10dp"
+                android:minHeight="10dp"
+                android:progressDrawable="@drawable/overlay_progress" />
+
+            <TextView
+                android:id="@+id/tvTodayBudget"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="#F2FFFFFF"
+                android:textSize="15sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnPreviewOk"
+                    style="@style/DS.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_preview_ok" />
+
+                <Button
+                    android:id="@+id/btnPreviewOver"
+                    style="@style/DS.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_preview_over" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnResetToday"
+                style="@style/DS.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/btn_reset_today"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- ===== הרשאות ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/perm_title" />
+
+            <TextView
+                android:id="@+id/tvNotifStatus"
+                style="@style/DS.Body"
+                android:layout_marginTop="4dp"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnNotifAccess"
+                style="@style/DS.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/btn_grant" />
+
+            <TextView
+                android:id="@+id/tvRestrictedHint"
+                style="@style/DS.Body"
+                android:layout_marginTop="6dp"
+                android:text="@string/restricted_hint"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnAppInfo"
+                style="@style/DS.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/btn_app_info" />
+
+            <TextView
+                android:id="@+id/tvOverlayStatus"
+                style="@style/DS.Body"
+                android:layout_marginTop="14dp"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnOverlay"
+                style="@style/DS.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/btn_grant" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:layout_marginTop="12dp"
+                android:text="@string/battery_note"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- ===== תקציב ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/budget_title" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etBudget"
+                    style="@style/DS.Input"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/budget_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="numberDecimal"
+                    android:maxLength="9"
+                    android:textDirection="ltr" />
+
+                <TextView
+                    android:id="@+id/tvBudgetSymbol"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/shekel"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp" />
+
+                <Button
+                    android:id="@+id/btnSaveBudget"
+                    style="@style/DS.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btn_save" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/DS.Body"
+                android:layout_marginTop="12dp"
+                android:text="@string/home_currency_label"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <Spinner
+                android:id="@+id/spHomeCurrency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_input"
+                android:minHeight="46dp"
+                android:popupBackground="@color/card_bg" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:layout_marginTop="8dp"
+                android:text="@string/budget_note"
+                android:textSize="13sp" />
+
+            <Switch
+                android:id="@+id/swExcludeInstallments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:minHeight="44dp"
+                android:text="@string/exclude_installments_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:text="@string/exclude_installments_note"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- ===== מקורות ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/sources_title" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:text="@string/sources_note"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/etRules"
+                style="@style/DS.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:gravity="top|start"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:layoutDirection="ltr"
+                android:minLines="8"
+                android:scrollHorizontally="false"
+                android:textDirection="ltr"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnSaveRules"
+                    style="@style/DS.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_save" />
+
+                <Button
+                    android:id="@+id/btnDefaultRules"
+                    style="@style/DS.Button.Secondary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_defaults" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===== יומן זיהוי ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/log_title" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:text="@string/log_note"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvLogEmpty"
+                style="@style/DS.Body"
+                android:layout_marginTop="10dp"
+                android:text="@string/log_empty" />
+
+            <LinearLayout
+                android:id="@+id/logContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical" />
+
+            <Button
+                android:id="@+id/btnClearLog"
+                style="@style/DS.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/btn_clear_log" />
+        </LinearLayout>
+
+        <!-- ===== עדכון גרסה ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/update_title" />
+
+            <TextView
+                android:id="@+id/tvInstalledVersion"
+                style="@style/DS.Body"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <Switch
+                android:id="@+id/swOnlineUpdates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:minHeight="44dp"
+                android:text="@string/update_online_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <Switch
+                android:id="@+id/swFxRates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="44dp"
+                android:text="@string/fx_online_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvOnlineNote"
+                style="@style/DS.Body"
+                android:text="@string/update_online_note"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvUpdateStatus"
+                style="@style/DS.Body"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/accent"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvFxStatus"
+                style="@style/DS.Body"
+                android:layout_marginTop="4dp"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnCheckNow"
+                    style="@style/DS.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_check_now" />
+
+                <Button
+                    android:id="@+id/btnPickApk"
+                    style="@style/DS.Button.Secondary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/btn_pick_apk" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnAllowInstall"
+                style="@style/DS.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/btn_allow_install" />
+        </LinearLayout>
+
+        <!-- ===== פרטיות ===== -->
+        <TextView
+            style="@style/DS.Body"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp"
+            android:text="@string/privacy_note"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DailySpendOverlay</string>
+    <string name="listener_label">DailySpendOverlay – זיהוי תשלומים</string>
+    <string name="app_tagline">מציגה לך בגדול כמה הוצאת היום – מיד אחרי כל תשלום.</string>
+    <string name="version_fmt">גרסה %1$s (%2$d)</string>
+
+    <!-- היום -->
+    <string name="today_label">הוצאת היום</string>
+    <string name="today_none">עוד לא זוהו תשלומים היום</string>
+    <string name="today_details_one">עסקה אחת · אחרונה: %1$s</string>
+    <string name="today_details_many">%1$d עסקאות · אחרונה: %2$s</string>
+    <string name="btn_preview_ok">תצוגה מקדימה</string>
+    <string name="btn_preview_over">תצוגת חריגה</string>
+    <string name="btn_reset_today">איפוס היום</string>
+    <string name="reset_confirm">לאפס את הסכום של היום ל-0?</string>
+    <string name="yes">כן</string>
+    <string name="cancel">ביטול</string>
+
+    <!-- חלונית צפה -->
+    <string name="overlay_header_ok">✓ תשלום זוהה</string>
+    <string name="overlay_header_over">⚠ מעל התקציב היומי</string>
+    <string name="overlay_header_crossed">⚠ עברת עכשיו את התקציב היומי!</string>
+    <string name="overlay_header_reversed">↩ עסקה בתשלומים הוסרה מהסכום היומי</string>
+    <string name="overlay_header_preview">תצוגה מקדימה – לא נשמר</string>
+    <string name="overlay_last_tx">עסקה אחרונה: %1$s</string>
+    <string name="overlay_today_label">הוצאת היום</string>
+    <string name="overlay_remaining">נשארו %1$s מתוך %2$s</string>
+    <string name="overlay_over_by">חריגה של %1$s מעל התקציב (%2$s)</string>
+    <string name="overlay_installments">ב-%1$d תשלומים של %2$s – נספר במלואו היום</string>
+    <string name="overlay_installments_excluded">ב-%1$d תשלומים של %2$s – לא נספר בסכום היומי</string>
+    <string name="overlay_converted_online">≈ %1$s לפי שער ECB</string>
+    <string name="overlay_converted_builtin">≈ %1$s לפי שער משוער</string>
+    <string name="overlay_not_counted">לא נכלל בסכום היומי – אין שער המרה למטבע הזה</string>
+    <string name="toast_fallback">הוצאת היום: %1$s (עסקה: %2$s)</string>
+
+    <!-- הרשאות -->
+    <string name="perm_title">הרשאות (פעם אחת)</string>
+    <string name="perm_notif_ok">✓ גישה להתראות פעילה</string>
+    <string name="perm_notif_missing">✗ אין גישה להתראות – בלי זה האפליקציה לא רואה תשלומים</string>
+    <string name="perm_overlay_ok">✓ הצגה מעל אפליקציות אחרות מאושרת</string>
+    <string name="perm_overlay_missing">✗ אין הרשאה להציג חלונית מעל אפליקציות</string>
+    <string name="btn_grant">אישור</string>
+    <string name="restricted_hint">באנדרואיד 13 ומעלה, אם המתג אפור: פרטי האפליקציה ← תפריט ⋮ למעלה ← \"התר הגדרות מוגבלות\", ואז חוזרים לכאן.</string>
+    <string name="btn_app_info">פרטי האפליקציה</string>
+    <string name="battery_note">האפליקציה לא רצה ברקע: המערכת מעירה אותה לשבריר שנייה רק כשמגיעה התראה.</string>
+
+    <!-- תקציב -->
+    <string name="budget_title">תקציב ומטבע</string>
+    <string name="budget_hint">250</string>
+    <string name="budget_note">מעל התקציב היומי החלונית הופכת לאדומה. קניות במטבע זר מומרות אוטומטית למטבע הראשי.</string>
+    <string name="home_currency_label">מטבע ראשי</string>
+    <string name="exclude_installments_switch">להציג רק הוצאות יומיות (בלי עסקאות בתשלומים)</string>
+    <string name="exclude_installments_note">כשהמתג דלוק, קנייה בתשלומים (למשל "ב-12 תשלומים") לא נספרת בכלל בסכום היומי. כשהוא כבוי – היא נספרת במלואה ביום הקנייה.</string>
+    <string name="currency_item">%1$s  %2$s (%3$s)</string>
+    <string name="currency_change_title">להחליף מטבע ראשי ל-%1$s?</string>
+    <string name="currency_change_msg">התקציב והסכום של היום יומרו לפי שער המטבע.</string>
+    <string name="btn_save">שמור</string>
+    <string name="saved">נשמר ✓</string>
+    <string name="budget_invalid">הכנס סכום גדול מ-0</string>
+    <string name="shekel">₪</string>
+
+    <!-- מקורות -->
+    <string name="sources_title">מקורות תשלום</string>
+    <string name="sources_note">שורה לכל מקור. שם חבילה של אפליקציה = כל ההתראות שלה. sms:שולח = הודעות SMS משולח בשם הזה בדיוק. חבילה|מילה = רק התראות שהכותרת שלהן מכילה את המילה. # = הערה.</string>
+    <string name="btn_defaults">שחזר ברירת מחדל</string>
+    <string name="defaults_confirm">להחליף את הרשימה ברשימת ברירת המחדל? תוספות שלך יימחקו.</string>
+
+    <!-- יומן זיהוי -->
+    <string name="log_title">התראות אחרונות עם סכום</string>
+    <string name="log_note">כאן רואים אם תשלום נקלט, ולמה. תשלום מאפליקציה שלא ברשימה? לוחצים \"הוסף\" והיא תיספר מעכשיו.</string>
+    <string name="log_empty">עוד לא זוהו התראות עם סכום.</string>
+    <string name="log_installments_excluded">עסקה בתשלומים – מוחרגת לפי ההגדרות</string>
+    <string name="log_no_rate">אין שער המרה ל-%1$s</string>
+    <string name="btn_add">הוסף</string>
+    <string name="btn_clear_log">נקה יומן</string>
+    <string name="log_counted">✓ נספר</string>
+    <string name="log_duplicate">כפילות – %1$s</string>
+    <string name="log_excluded">סונן – \"%1$s\"</string>
+    <string name="log_not_listed">לא ברשימת המקורות</string>
+    <string name="rule_added">נוסף מקור: %1$s</string>
+
+    <!-- עדכון גרסה -->
+    <string name="update_title">עדכונים ושערי מטבע</string>
+    <string name="update_online_switch">בדיקת עדכוני גרסה (GitHub)</string>
+    <string name="fx_online_switch">שערי מטבע יומיים (ECB)</string>
+    <string name="update_online_note">החיבור לאינטרנט משמש רק לבדיקת גרסה חדשה (ושאלה לפני התקנה) ולשערי מטבע יומיים מהבנק המרכזי האירופי – ורק באישורך. נתוני ההוצאות לא נשלחים לשום מקום.</string>
+    <string name="update_online_not_configured">עדכון אונליין יופעל בגרסאות שנבנות ב-GitHub (ראה README). עד אז אפשר לעדכן מקובץ.</string>
+    <string name="btn_check_now">בדוק עכשיו</string>
+    <string name="btn_pick_apk">עדכון מקובץ</string>
+    <string name="btn_allow_install">אשר התקנת עדכונים</string>
+    <string name="install_permission_needed">כדי שהאפליקציה תוכל לעדכן את עצמה, אשר \"התקנת אפליקציות לא ידועות\" עבורה, וחזור לכאן.</string>
+    <string name="update_consent_title">לאפשר חיבור לאינטרנט?</string>
+    <string name="update_consent_msg">האפליקציה תתחבר רק כדי:\n• לבדוק אם יצאה גרסה חדשה (GitHub) – ותשאל לפני כל התקנה\n• לעדכן שערי מטבע פעם ביום (הבנק המרכזי האירופי)\n\nשום נתון הוצאות לא נשלח – הכל נשאר בטלפון. אפשר לכבות בכל רגע במסך הזה.</string>
+    <string name="update_consent_allow">אפשר</string>
+    <string name="update_consent_deny">לא עכשיו</string>
+    <string name="update_checking">בודק אם יש גרסה חדשה…</string>
+    <string name="update_up_to_date">יש לך את הגרסה האחרונה ✓ (נבדק %1$s)</string>
+    <string name="fx_status_online">שערי מטבע: ECB מתאריך %1$s</string>
+    <string name="fx_status_builtin">שערי מטבע: משוערים מובנים (%1$s)</string>
+    <string name="fx_refresh_failed">עדכון שערי מטבע נכשל: %1$s</string>
+    <string name="update_check_failed">הבדיקה נכשלה: %1$s</string>
+    <string name="update_available_title">גרסה חדשה: %1$s</string>
+    <string name="update_available_msg">מותקנת: %1$s (%2$d)\nחדשה: %3$s (%4$d)\n\n%5$s\n\nלהוריד ולהתקין? האפליקציה תיסגר לרגע. הסכום היומי וההגדרות נשמרים.</string>
+    <string name="update_downloading">מוריד עדכון… %1$d%%</string>
+    <string name="update_verifying">מאמת את הקובץ…</string>
+    <string name="update_err_hash">הקובץ שהורד לא תקין (טביעת SHA-256 לא תואמת). נסה שוב.</string>
+    <string name="update_dialog_title">להתקין עדכון?</string>
+    <string name="update_dialog_msg">מותקנת: %1$s (%2$d)\nבקובץ: %3$s (%4$d)\n\nהאפליקציה תיסגר לרגע ותתעדכן. הסכום היומי וההגדרות נשמרים.</string>
+    <string name="update_same_version">זו אותה גרסה שכבר מותקנת (%1$s). להתקין מחדש בכל זאת?</string>
+    <string name="btn_install">התקן</string>
+    <string name="btn_later">אחר כך</string>
+    <string name="update_installing">מתקין… האפליקציה תיסגר ותתעדכן.</string>
+    <string name="update_err_read">לא הצלחתי לקרוא את הקובץ.</string>
+    <string name="update_err_not_apk">הקובץ אינו APK תקין.</string>
+    <string name="update_err_other_app">זה APK של אפליקציה אחרת (%1$s).</string>
+    <string name="update_err_older">הקובץ ישן יותר מהגרסה המותקנת (%1$s לעומת %2$s). אנדרואיד לא מאפשר להוריד גרסה.</string>
+    <string name="update_err_signature">הקובץ חתום במפתח אחר – אנדרואיד יסרב לעדכן. צריך APK שנבנה עם קובץ המפתח keystore/dailyspend.jks של הפרויקט.</string>
+    <string name="update_err_generic">שגיאה בהתקנה: %1$s</string>
+    <string name="update_success">העדכון הותקן ✓</string>
+    <string name="update_failed">העדכון נכשל (%1$d): %2$s</string>
+    <string name="update_done_toast">DailySpendOverlay עודכנה לגרסה %1$s ✓</string>
+
+    <!-- פרטיות -->
+    <string name="privacy_note">🔒 נתוני ההוצאות נשמרים רק בטלפון הזה: אין שרת, אין חשבון, אין גיבוי לענן. אינטרנט משמש רק לבדיקת עדכונים – ורק אם אישרת.</string>
+    <string name="need_overlay_first">קודם צריך לאשר הצגה מעל אפליקציות אחרות</string>
+</resources>

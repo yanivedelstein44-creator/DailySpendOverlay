@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ================= הרשאות: רק מה שחייבים ================= -->
+
+    <!-- 1. חלונית צפה מעל אפליקציות אחרות (המשתמש מאשר ידנית בהגדרות) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- 2. עדכון עצמי מקובץ APK שנמצא בטלפון (המשתמש מאשר "התקנת אפליקציות לא ידועות") -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 12+: מאפשר לאפליקציה לעדכן את עצמה בלי חלון אישור נוסף -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+
+    <!-- 3. אינטרנט – אך ורק לבדיקת עדכונים ב-GitHub, ורק אחרי שהמשתמש אישר בתוך האפליקציה.
+         באנדרואיד ההרשאה הזו ניתנת אוטומטית בהתקנה (אין לה חלון בקשה), ולכן "שער ההסכמה" ממומש בקוד:
+         הקובץ היחיד שפותח חיבור רשת הוא update/OnlineUpdater.kt, והוא לא שולח שום נתון הוצאות. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- גישה להתראות היא לא uses-permission: היא מוגדרת על השירות למטה
+         (BIND_NOTIFICATION_LISTENER_SERVICE) והמשתמש מפעיל אותה ידנית בהגדרות. -->
+
+    <!-- הרשאות רשת נוספות לא נחוצות – מוסרות גם אם ספרייה כלשהי תנסה להוסיף אותן -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
+
+    <!-- נראות אפליקציות (Android 11+): רק כדי להציג שם אפליקציה ביומן הזיהוי -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <!-- allowBackup=false + dataExtractionRules: הנתונים לא מגובים לענן של גוגל.
+         networkSecurityConfig: רק HTTPS, אין תעבורה לא מוצפנת. -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.DailySpend">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- שירות קליטת ההתראות.
+             המערכת מעירה אותו רק כשמגיעה התראה: אין ריצה ברקע, אין WakeLock, אין סריקה מחזורית. -->
+        <service
+            android:name=".listener.SpendNotificationListener"
+            android:exported="true"
+            android:label="@string/listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+            <!-- Android 12+: לא לקבל התראות "בזמן אמת" (מוזיקה, ניווט, הורדות) – חוסך התעוררויות -->
+            <meta-data
+                android:name="android.service.notification.default_filter_types"
+                android:value="conversations|alerting|silent" />
+        </service>
+
+        <!-- תוצאת התקנת עדכון (חלון אישור / הצלחה / כישלון) -->
+        <receiver
+            android:name=".update.InstallResultReceiver"
+            android:exported="false" />
+
+        <!-- הודעה קצרה אחרי שהאפליקציה עודכנה בהצלחה -->
+        <receiver
+            android:name=".update.PackageReplacedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

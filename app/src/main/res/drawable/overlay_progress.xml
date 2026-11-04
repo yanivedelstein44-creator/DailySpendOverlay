@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- פס התקדמות מעוגל. הצבע של החלק המלא נקבע בקוד (progressTintList). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="5dp" />
+            <solid android:color="#40FFFFFF" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <!-- gravity=start: בממשק מימין לשמאל הפס מתמלא מימין -->
+        <clip android:gravity="start">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <solid android:color="#FFFFFFFF" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>

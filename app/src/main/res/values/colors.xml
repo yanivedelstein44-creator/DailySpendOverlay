@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- מסך ההגדרות -->
+    <color name="app_bg">#0E1621</color>
+    <color name="card_bg">#17222F</color>
+    <color name="card_stroke">#243344</color>
+    <color name="input_bg">#0F1823</color>
+    <color name="text_primary">#F2F5F8</color>
+    <color name="text_secondary">#9AA8B6</color>
+    <color name="accent">#5CC8FF</color>
+    <color name="on_accent">#06243A</color>
+    <color name="ok_green">#4ADE80</color>
+    <color name="warn_red">#FF6B6B</color>
+
+    <!-- חלונית: מצב רגוע (מתחת לתקציב) – כחול כהה -->
+    <color name="calm_start">#0B2545</color>
+    <color name="calm_end">#13507A</color>
+    <color name="calm_progress">#7FDBFF</color>
+
+    <!-- חלונית: חריגה מהתקציב – אדום בולט -->
+    <color name="over_start">#B3001B</color>
+    <color name="over_end">#FF2D2D</color>
+
+    <color name="ic_launcher_bg">#0B2545</color>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#335CC8FF">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/accent" />
+        </shape>
+    </item>
+    <!-- מסכה: אפקט הלחיצה ממלא את כל הכפתור, לא רק את המסגרת -->
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+</ripple>
