@@ -5,6 +5,15 @@ package com.yaniv.dailyspendoverlay.core
  * בלי שכר שעתי מוגדר (0) – אין חישוב.
  */
 object WorkTime {
+    /** שעות עבודה בחודש במשרה מלאה בישראל (42 שעות שבועיות) */
+    const val MONTHLY_HOURS = 182L
+
+    /** ממיר שכר חודשי (באגורות) לשכר שעתי (באגורות), מעוגל */
+    fun hourlyFromMonthly(monthlyMinor: Long, hoursPerMonth: Long = MONTHLY_HOURS): Long {
+        val hours = if (hoursPerMonth in 1..744) hoursPerMonth else MONTHLY_HOURS
+        return if (monthlyMinor <= 0) 0L else (monthlyMinor + hours / 2) / hours
+    }
+
 
     /** דקות עבודה שהסכום שווה להן (מעוגל), או null אם אין שכר שעתי / אין סכום */
     fun minutes(amountMinor: Long, hourlyWageMinor: Long): Long? {

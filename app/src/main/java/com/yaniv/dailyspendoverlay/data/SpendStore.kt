@@ -7,6 +7,7 @@ import android.telephony.TelephonyManager
 import com.yaniv.dailyspendoverlay.core.Amount
 import com.yaniv.dailyspendoverlay.core.Conversion
 import com.yaniv.dailyspendoverlay.core.Currencies
+import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.core.DailyLedger
 import com.yaniv.dailyspendoverlay.core.DetectionEntry
 import com.yaniv.dailyspendoverlay.core.DetectionLog
@@ -56,6 +57,8 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_BRIGHTNESS = "theme_brightness"
         private const val KEY_OVERLAY_FULL = "overlay_full"
         private const val KEY_WAGE = "hourly_wage_minor"
+        private const val KEY_WAGE_MONTHLY = "monthly_wage_minor"
+        private const val KEY_WORK_HOURS = "work_hours_month"
 
         /** ברירת מחדל: אין תקציב (0). המשתמש מגדיר אם רוצה */
         const val DEFAULT_BUDGET_MINOR = 0L
@@ -179,6 +182,20 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             preferences.edit().putLong(KEY_WAGE, value.coerceAtLeast(0L)).apply()
         }
 
+    /** שכר חודשי שהמשתמש הזין (0 = הוזן שכר שעתי ישירות). השכר השעתי נגזר ממנו */
+    var monthlyWageMinor: Long
+        get() = preferences.getLong(KEY_WAGE_MONTHLY, 0L)
+        set(value) {
+            preferences.edit().putLong(KEY_WAGE_MONTHLY, value.coerceAtLeast(0L)).apply()
+        }
+
+    /** כמה שעות עובדים בחודש (לחלוקת שכר חודשי). ברירת מחדל 182 = משרה מלאה */
+    var workHoursPerMonth: Long
+        get() = preferences.getLong(KEY_WORK_HOURS, WorkTime.MONTHLY_HOURS)
+        set(value) {
+            preferences.edit().putLong(KEY_WORK_HOURS, value.coerceIn(1L, 744L)).apply()
+        }
+
     /** גודל החלונית: false = כרטיס, true = מסך מלא */
     var overlayFull: Boolean
         get() = preferences.getBoolean(KEY_OVERLAY_FULL, false)
@@ -251,6 +268,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             .putString(KEY_HOME_CURRENCY, newCode)
             .putLong(KEY_BUDGET, newBudget?.let { roundToWhole(it) } ?: budgetMinor)
             .putLong(KEY_WAGE, convert(hourlyWageMinor)?.let { roundToWhole(it) } ?: hourlyWageMinor)
+            .putLong(KEY_WAGE_MONTHLY, convert(monthlyWageMinor)?.let { roundToWhole(it) } ?: monthlyWageMinor)
             .apply()
         if (newTotal != null && newLastHome != null) {
             saveState(state.copy(totalMinor = newTotal, lastTxHomeMinor = newLastHome))

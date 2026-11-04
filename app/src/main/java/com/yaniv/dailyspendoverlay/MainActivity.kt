@@ -90,6 +90,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var etRules: EditText
     private lateinit var etWage: EditText
     private lateinit var tvWageSymbol: TextView
+    private lateinit var etMonthlyWage: EditText
+    private lateinit var tvMonthlySymbol: TextView
+    private lateinit var tvMonthlyWageInfo: TextView
+    private lateinit var etWorkHours: EditText
     private lateinit var sourcesHeader: View
     private lateinit var sourcesBody: View
     private lateinit var tvSourcesArrow: TextView
@@ -226,6 +230,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         etRules = findViewById(R.id.etRules)
         etWage = findViewById(R.id.etWage)
         tvWageSymbol = findViewById(R.id.tvWageSymbol)
+        etMonthlyWage = findViewById(R.id.etMonthlyWage)
+        tvMonthlySymbol = findViewById(R.id.tvMonthlySymbol)
+        tvMonthlyWageInfo = findViewById(R.id.tvMonthlyWageInfo)
+        etWorkHours = findViewById(R.id.etWorkHours)
         sourcesHeader = findViewById(R.id.sourcesHeader)
         sourcesBody = findViewById(R.id.sourcesBody)
         tvSourcesArrow = findViewById(R.id.tvSourcesArrow)
@@ -381,6 +389,33 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
                 return@setOnClickListener
             }
             store.hourlyWageMinor = value // 0 = כבוי
+            store.monthlyWageMinor = 0L
+            etMonthlyWage.setText("")
+            refreshBudgetAndCurrency()
+            hideKeyboard()
+            toast(getString(if (value > 0) R.string.saved else R.string.wage_saved_off))
+        }
+
+        findViewById<Button>(R.id.btnSaveMonthlyWage).setOnClickListener {
+            val raw = etMonthlyWage.text.toString()
+            val value = if (raw.isBlank()) 0L else Money.parseToMinor(raw)
+            if (value == null) {
+                etMonthlyWage.error = getString(R.string.budget_invalid)
+                return@setOnClickListener
+            }
+            val hoursRaw = etWorkHours.text.toString().trim()
+            val hours = if (hoursRaw.isBlank()) WorkTime.MONTHLY_HOURS else hoursRaw.toLongOrNull()
+            if (hours == null || hours !in 1L..744L) {
+                etWorkHours.error = getString(R.string.budget_invalid)
+                return@setOnClickListener
+            }
+            store.workHoursPerMonth = hours
+            store.monthlyWageMinor = value
+            store.hourlyWageMinor = WorkTime.hourlyFromMonthly(value, hours)
+            etWage.setText("")
+            etWage.clearFocus()
+            etMonthlyWage.clearFocus()
+            refreshBudgetAndCurrency()
             hideKeyboard()
             toast(getString(if (value > 0) R.string.saved else R.string.wage_saved_off))
         }
@@ -404,6 +439,24 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvWageSymbol.text = home.symbol
         if (!etWage.hasFocus()) {
             etWage.setText(if (store.hourlyWageMinor > 0) Money.formatNumber(store.hourlyWageMinor).replace(",", "") else "")
+        }
+        tvMonthlySymbol.text = home.symbol
+        if (!etWorkHours.hasFocus()) {
+            etWorkHours.setText(if (store.workHoursPerMonth != WorkTime.MONTHLY_HOURS) store.workHoursPerMonth.toString() else "")
+        }
+        val monthly = store.monthlyWageMinor
+        if (!etMonthlyWage.hasFocus()) {
+            etMonthlyWage.setText(if (monthly > 0) Money.formatNumber(monthly).replace(",", "") else "")
+        }
+        if (monthly > 0 && store.hourlyWageMinor > 0) {
+            tvMonthlyWageInfo.text = getString(
+                R.string.wage_monthly_info,
+                Money.format(store.hourlyWageMinor, store.homeCurrency),
+                store.workHoursPerMonth.toInt()
+            )
+            tvMonthlyWageInfo.visibility = View.VISIBLE
+        } else {
+            tvMonthlyWageInfo.visibility = View.GONE
         }
         selectCurrentCurrency()
         suppressSwitchCallbacks = true

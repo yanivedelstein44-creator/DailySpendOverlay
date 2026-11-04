@@ -30,4 +30,11 @@ class WorkTimeTest {
     @Test fun smallAmountRoundsToLessThanAMinute() {
         assertEquals("פחות מדקה", WorkTime.describe(50, 11000)) // 0.27 דקות
     }
+
+    @Test
+    fun monthlyToHourly() {
+        assertEquals(6593L, WorkTime.hourlyFromMonthly(1200000))
+        assertEquals(7500L, WorkTime.hourlyFromMonthly(1200000, 160))
+        assertEquals(0L, WorkTime.hourlyFromMonthly(0))
+    }
 }

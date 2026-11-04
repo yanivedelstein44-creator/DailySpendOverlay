@@ -302,6 +302,62 @@
                     android:text="@string/btn_save" />
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etMonthlyWage"
+                    style="@style/DS.Input"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/wage_monthly_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="numberDecimal"
+                    android:maxLength="9"
+                    android:textDirection="ltr" />
+
+                <TextView
+                    android:id="@+id/tvMonthlySymbol"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/shekel"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp" />
+
+                <Button
+                    android:id="@+id/btnSaveMonthlyWage"
+                    style="@style/DS.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btn_save" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/etWorkHours"
+                style="@style/DS.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:hint="@string/work_hours_hint"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:maxLength="3"
+                android:textDirection="ltr" />
+
+            <TextView
+                android:id="@+id/tvMonthlyWageInfo"
+                style="@style/DS.Body"
+                android:layout_marginTop="6dp"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
             <TextView
                 style="@style/DS.Body"
                 android:layout_marginTop="8dp"
