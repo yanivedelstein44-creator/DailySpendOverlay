@@ -60,7 +60,10 @@ data class OverlayInfo(
  *  • לא לוקחת פוקוס ולא דורשת שום פעולה – נעלמת לבד אחרי 4 שניות.
  *  • כחול רגוע כל עוד הסכום היומי לא עבר את התקציב; אדום בולט (עם מסגרת לבנה) מעל התקציב.
  *  • אם מגיעה עסקה נוספת בזמן שהחלונית מוצגת – התוכן מתעדכן והטיימר מתחיל מחדש.
+ *
+ * (StaticFieldLeak: נשמר רק Context של האפליקציה/החלון – לא Activity – והחלונית משוחררת אחרי 4 שניות.)
  */
+@SuppressLint("StaticFieldLeak")
 object OverlayManager {
 
     private const val TAG = "DailySpend"

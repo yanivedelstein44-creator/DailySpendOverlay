@@ -1,5 +1,6 @@
 package com.yaniv.dailyspendoverlay.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.telephony.TelephonyManager
@@ -110,6 +111,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         )
     }
 
+    @SuppressLint("ApplySharedPref") // commit מכוון: הסכום נשמר לדיסק לפני שהחלונית מוצגת
     @Synchronized
     private fun saveState(state: LedgerState) {
         val editor = preferences.edit()

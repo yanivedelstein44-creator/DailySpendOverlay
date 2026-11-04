@@ -49,7 +49,7 @@ class MiscCoreTest {
         assertTrue(rules.matches("com.google.android.apps.walletnfcrel", "anything"))
         assertTrue(rules.matches("com.some.bank", "MAX: עסקה"))
         assertFalse(rules.matches("com.some.bank", "הודעה כללית"))
-        assertTrue(rules.matches("com.google.android.apps.messaging", "‏max"))
+        assertTrue(rules.matches("com.google.android.apps.messaging", "\u200Fmax"))
         assertFalse(rules.matches("com.google.android.apps.messaging", "Max Stock"))
         assertFalse(rules.matches("com.whatsapp", "max"))
     }

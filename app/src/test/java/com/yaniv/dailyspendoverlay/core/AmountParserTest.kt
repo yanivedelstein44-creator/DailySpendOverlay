@@ -29,7 +29,7 @@ class AmountParserTest {
 
     // ---------------- שקלים ----------------
 
-    @Test fun shekelSignAfterNumberWithRtlMarks() = assertExpense("‏125.90 ‏₪ ב-SHUFERSAL", 12590)
+    @Test fun shekelSignAfterNumberWithRtlMarks() = assertExpense("\u200F125.90 \u200F₪ ב-SHUFERSAL", 12590)
     @Test fun shekelSignBeforeNumber() = assertExpense("₪34.90 with Visa ••1234", 3490)
     @Test fun hebrewBankSentence() = assertExpense("בוצעה עסקה בכרטיס המסתיים ב-1234 בסך 125.90 ש\"ח בבית העסק שופרסל", 12590)
     @Test fun thousandsSeparator() = assertExpense("חיוב בסך 1,234.50 ₪ בכרטיס 5678", 123450)
@@ -40,7 +40,7 @@ class AmountParserTest {
     @Test fun shekelsWord() = assertExpense("העברת 250 שקלים", 25000)
     @Test fun noSpaceBeforeSign() = assertExpense("סה״כ 45.5₪", 4550)
     @Test fun hyphenPrefixIsNotMinus() = assertExpense("בוצעה עסקה ב-120 ₪", 12000)
-    @Test fun nbspAndThinSpaces() = assertExpense("סכום: 89.90 ₪", 8990)
+    @Test fun nbspAndThinSpaces() = assertExpense("סכום:\u00A089.90\u202F₪", 8990)
 
     @Test fun skipsBalanceBeforeTransaction() = assertExpense("יתרה: 3,000 ₪ | חיוב: 120 ₪", 12000)
     @Test fun firstAmountWinsOverLaterBalance() = assertExpense("עסקה בסך 120 ₪. יתרה זמינה: 3,000 ₪", 12000)
@@ -59,7 +59,7 @@ class AmountParserTest {
     @Test fun canadianBeforeUsd() = assertExpense("C$20.00 at Tim Hortons", 2000, "CAD")
     @Test fun usDollarPrefix() = assertExpense("US$9.99 subscription", 999, "USD")
     @Test fun yenNoDecimals() = assertExpense("¥1,200 at Lawson", 120000, "JPY")
-    @Test fun frenchNarrowNbsp() = assertExpense("Paiement de 1 234,50 €", 123450, "EUR")
+    @Test fun frenchNarrowNbsp() = assertExpense("Paiement de 1\u202F234,50\u00A0€", 123450, "EUR")
     @Test fun swissApostrophe() = assertExpense("CHF 1'234.50 Migros", 123450, "CHF")
 
     @Test fun lowercaseCodeIsNotCurrency() = assertNoAmount("Please try 5 more times")

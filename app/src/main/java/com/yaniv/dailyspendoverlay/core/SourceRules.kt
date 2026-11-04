@@ -61,7 +61,7 @@ class SourceRules private constructor(
             sms:לאומי
         """.trimIndent()
 
-        private const val INVISIBLE_CHARS = "‎‏؜‪‫‬‭‮⁦⁧⁨⁩"
+        private const val INVISIBLE_CHARS = "\u200E\u200F\u061C\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069"
 
         fun normalize(s: String): String =
             s.filterNot { it in INVISIBLE_CHARS }.trim().lowercase()

@@ -36,6 +36,7 @@
          networkSecurityConfig: רק HTTPS, אין תעבורה לא מוצפנת. -->
     <application
         android:allowBackup="false"
+        android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:networkSecurityConfig="@xml/network_security_config"
         android:icon="@mipmap/ic_launcher"

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- החלונית הצפה. הרקע (כחול רגוע / אדום חריגה) נקבע בקוד ב-OverlayManager. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layoutDirection="rtl"
-    android:padding="6dp">
+    android:padding="6dp"
+    tools:ignore="UselessParent">
 
     <LinearLayout
         android:id="@+id/overlayCard"
