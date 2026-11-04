@@ -23,15 +23,10 @@
             android:textStyle="bold" />
 
         <TextView
-            style="@style/DS.Body"
-            android:layout_marginTop="2dp"
-            android:text="@string/app_tagline" />
-
-        <TextView
             android:id="@+id/tvVersion"
             style="@style/DS.Body"
             android:layout_marginTop="2dp"
-            android:layout_marginBottom="14dp"
+            android:layout_marginBottom="12dp"
             android:textSize="12sp" />
 
         <!-- ===== היום (הרקע משתנה: כחול / אדום) ===== -->
@@ -119,6 +114,12 @@
                 android:text="@string/btn_reset_today"
                 android:textColor="#FFFFFF" />
         </LinearLayout>
+
+        <!-- ===== מה האפליקציה עושה (מתחת לכרטיס של היום) ===== -->
+        <TextView
+            style="@style/DS.Body"
+            android:layout_marginBottom="14dp"
+            android:text="@string/app_tagline" />
 
         <!-- ===== הרשאות ===== -->
         <LinearLayout style="@style/DS.Card">
