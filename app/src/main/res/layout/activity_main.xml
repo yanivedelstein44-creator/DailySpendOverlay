@@ -258,6 +258,59 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- ===== מראה החלונית ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/appearance_title" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:text="@string/appearance_color_label"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <LinearLayout
+                android:id="@+id/swatchRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal" />
+
+            <TextView
+                android:id="@+id/tvBrightness"
+                style="@style/DS.Body"
+                android:layout_marginTop="14dp"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <SeekBar
+                android:id="@+id/seekBrightness"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:minHeight="44dp" />
+
+            <Switch
+                android:id="@+id/swOverlayFull"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:minHeight="44dp"
+                android:text="@string/appearance_full_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:layout_marginTop="4dp"
+                android:text="@string/appearance_note"
+                android:textSize="13sp" />
+        </LinearLayout>
+
         <!-- ===== מקורות ===== -->
         <LinearLayout style="@style/DS.Card">
 

@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -18,6 +19,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.Switch
 import android.widget.TextView
@@ -30,6 +32,7 @@ import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.FxRates
 import com.yaniv.dailyspendoverlay.core.Money
 import com.yaniv.dailyspendoverlay.core.SourceRules
+import com.yaniv.dailyspendoverlay.core.Themes
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.net.FxUpdater
 import com.yaniv.dailyspendoverlay.net.OnlinePurpose
@@ -79,6 +82,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var tvBudgetSymbol: TextView
     private lateinit var spHomeCurrency: Spinner
     private lateinit var swExcludeInstallments: Switch
+    private lateinit var swatchRow: LinearLayout
+    private lateinit var tvBrightness: TextView
+    private lateinit var seekBrightness: SeekBar
+    private lateinit var swOverlayFull: Switch
     private lateinit var etRules: EditText
     private lateinit var tvLogEmpty: TextView
     private lateinit var logContainer: LinearLayout
@@ -104,6 +111,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         setupToday()
         setupPermissions()
         setupBudgetAndCurrency()
+        setupAppearance()
         setupRules()
         setupLog()
         setupOnline()
@@ -141,6 +149,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         refreshToday()
         refreshPermissions()
         refreshBudgetAndCurrency()
+        refreshAppearance()
         refreshLog()
         refreshOnline()
     }
@@ -203,6 +212,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvBudgetSymbol = findViewById(R.id.tvBudgetSymbol)
         spHomeCurrency = findViewById(R.id.spHomeCurrency)
         swExcludeInstallments = findViewById(R.id.swExcludeInstallments)
+        swatchRow = findViewById(R.id.swatchRow)
+        tvBrightness = findViewById(R.id.tvBrightness)
+        seekBrightness = findViewById(R.id.seekBrightness)
+        swOverlayFull = findViewById(R.id.swOverlayFull)
         etRules = findViewById(R.id.etRules)
         tvLogEmpty = findViewById(R.id.tvLogEmpty)
         logContainer = findViewById(R.id.logContainer)
@@ -357,6 +370,64 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         suppressSwitchCallbacks = true
         swExcludeInstallments.isChecked = store.excludeInstallments
         suppressSwitchCallbacks = false
+    }
+
+    // ==================================================================
+    // מראה החלונית: צבע + בהירות באחוזים
+    // ==================================================================
+
+    private fun setupAppearance() {
+        swOverlayFull.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.overlayFull = checked
+        }
+        seekBrightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                tvBrightness.text = getString(R.string.appearance_brightness, progress)
+                if (!fromUser) return
+                store.brightnessPercent = progress
+                refreshToday()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+    }
+
+    private fun refreshAppearance() {
+        seekBrightness.progress = store.brightnessPercent
+        tvBrightness.text = getString(R.string.appearance_brightness, store.brightnessPercent)
+        suppressSwitchCallbacks = true
+        swOverlayFull.isChecked = store.overlayFull
+        suppressSwitchCallbacks = false
+        buildSwatches()
+    }
+
+    private fun buildSwatches() {
+        swatchRow.removeAllViews()
+        val selected = store.themeColor
+        val size = (44 * resources.displayMetrics.density).toInt()
+        val gap = (10 * resources.displayMetrics.density).toInt()
+        val ring = (3 * resources.displayMetrics.density).toInt()
+        for (theme in Themes.ALL) {
+            val swatch = View(this)
+            val isSelected = theme.id == selected.id
+            swatch.background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                intArrayOf(theme.start, theme.end)
+            ).apply {
+                shape = GradientDrawable.OVAL
+                if (isSelected) setStroke(ring, Color.WHITE) else setStroke(ring / 3, getColor(R.color.card_stroke))
+            }
+            swatch.contentDescription =
+                if (isSelected) getString(R.string.appearance_color_selected, theme.nameHe) else theme.nameHe
+            swatch.setOnClickListener {
+                store.themeColor = theme
+                buildSwatches()
+                refreshToday()
+            }
+            swatchRow.addView(swatch, LinearLayout.LayoutParams(size, size).apply { marginEnd = gap })
+        }
     }
 
     // ==================================================================

@@ -15,6 +15,8 @@ import com.yaniv.dailyspendoverlay.core.FxTable
 import com.yaniv.dailyspendoverlay.core.LedgerResult
 import com.yaniv.dailyspendoverlay.core.LedgerState
 import com.yaniv.dailyspendoverlay.core.SourceRules
+import com.yaniv.dailyspendoverlay.core.ThemeColor
+import com.yaniv.dailyspendoverlay.core.Themes
 import com.yaniv.dailyspendoverlay.net.OnlinePurpose
 import java.time.LocalDate
 import java.util.Currency
@@ -50,6 +52,9 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_FX_FETCHED_AT = "fx_fetched_at"
         private const val KEY_LAST_UPDATE_CHECK = "last_update_check"
         private const val KEY_EXCLUDE_INSTALLMENTS = "exclude_installments"
+        private const val KEY_THEME = "theme_color"
+        private const val KEY_BRIGHTNESS = "theme_brightness"
+        private const val KEY_OVERLAY_FULL = "overlay_full"
 
         const val DEFAULT_BUDGET_MINOR = 250_00L
 
@@ -158,9 +163,30 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         return result
     }
 
-    /** מתג: לא לכלול עסקאות בתשלומים בסכום היומי (ברירת מחדל: כבוי = נספרות במלואן) */
+    /** צבע החלונית (כחול / טורקיז / ירוק / סגול / ורוד / אפור) */
+    var themeColor: ThemeColor
+        get() = Themes.byId(preferences.getString(KEY_THEME, Themes.DEFAULT_ID))
+        set(value) {
+            preferences.edit().putString(KEY_THEME, value.id).apply()
+        }
+
+    /** גודל החלונית: false = כרטיס, true = מסך מלא */
+    var overlayFull: Boolean
+        get() = preferences.getBoolean(KEY_OVERLAY_FULL, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_OVERLAY_FULL, value).apply()
+        }
+
+    /** בהירות החלונית באחוזים (0–100, ברירת מחדל 50) */
+    var brightnessPercent: Int
+        get() = preferences.getInt(KEY_BRIGHTNESS, Themes.DEFAULT_BRIGHTNESS).coerceIn(0, 100)
+        set(value) {
+            preferences.edit().putInt(KEY_BRIGHTNESS, value.coerceIn(0, 100)).apply()
+        }
+
+    /** מתג "להציג רק הוצאות יומיות": עסקאות בתשלומים לא נספרות בסכום היומי (ברירת מחדל: דלוק) */
     var excludeInstallments: Boolean
-        get() = preferences.getBoolean(KEY_EXCLUDE_INSTALLMENTS, false)
+        get() = preferences.getBoolean(KEY_EXCLUDE_INSTALLMENTS, true)
         set(value) {
             preferences.edit().putBoolean(KEY_EXCLUDE_INSTALLMENTS, value).apply()
         }

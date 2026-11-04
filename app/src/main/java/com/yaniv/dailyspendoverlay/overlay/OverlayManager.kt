@@ -20,8 +20,10 @@ import android.view.Display
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -29,6 +31,8 @@ import com.yaniv.dailyspendoverlay.R
 import com.yaniv.dailyspendoverlay.core.Amount
 import com.yaniv.dailyspendoverlay.core.BudgetStatus
 import com.yaniv.dailyspendoverlay.core.Money
+import com.yaniv.dailyspendoverlay.core.Themes
+import com.yaniv.dailyspendoverlay.data.SpendStore
 import kotlin.math.min
 
 /** מה מציגים בחלונית */
@@ -74,6 +78,7 @@ object OverlayManager {
     private var windowContext: Context? = null
     private var windowManager: WindowManager? = null
     private var root: View? = null
+    private var attachedFull = false
     private val hideRunnable = Runnable { hide() }
 
     fun show(context: Context, info: OverlayInfo) {
@@ -87,14 +92,21 @@ object OverlayManager {
             return
         }
         try {
-            val existing = root
+            val full = SpendStore.get(app).overlayFull
+            var existing = root
+            if (existing != null && attachedFull != full) {
+                // המשתמש החליף בין כרטיס למסך מלא בזמן שהחלונית מוצגת – בונים מחדש
+                existing.animate().cancel()
+                removeNow(existing)
+                existing = null
+            }
             val view = if (existing != null) {
                 existing.animate().cancel()
                 existing.alpha = 1f
                 existing.translationY = 0f
                 existing
             } else {
-                createAndAttach(app)
+                createAndAttach(app, full)
             }
             bind(view, info)
             main.removeCallbacks(hideRunnable)
@@ -111,14 +123,15 @@ object OverlayManager {
     // ------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
-    private fun createAndAttach(app: Context): View {
+    private fun createAndAttach(app: Context, full: Boolean): View {
         val ctx = obtainWindowContext(app)
         val wm = ctx.getSystemService(WindowManager::class.java)
         val themed = ContextThemeWrapper(ctx, R.style.Theme_DailySpend_Overlay)
         val view = LayoutInflater.from(themed).inflate(R.layout.overlay_spend, null, false)
-        wm.addView(view, buildParams(ctx))
+        wm.addView(view, buildParams(ctx, full))
         windowManager = wm
         root = view
+        attachedFull = full
 
         view.alpha = 0f
         view.translationY = -dp(ctx, 24f)
@@ -150,20 +163,26 @@ object OverlayManager {
         return ctx
     }
 
-    private fun buildParams(ctx: Context): WindowManager.LayoutParams {
+    private fun buildParams(ctx: Context, full: Boolean): WindowManager.LayoutParams {
         val metrics = ctx.resources.displayMetrics
-        val width = min(metrics.widthPixels - dp(ctx, 24f).toInt(), dp(ctx, 440f).toInt())
+        val width = if (full) WindowManager.LayoutParams.MATCH_PARENT
+        else min(metrics.widthPixels - dp(ctx, 24f).toInt(), dp(ctx, 440f).toInt())
         return WindowManager.LayoutParams(
             width,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            if (full) WindowManager.LayoutParams.MATCH_PARENT else WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = (metrics.heightPixels * 0.18f).toInt() // מתחת להתראה הקופצת של המערכת
+            if (full) {
+                gravity = Gravity.CENTER
+                y = 0
+            } else {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                y = (metrics.heightPixels * 0.18f).toInt() // מתחת להתראה הקופצת של המערכת
+            }
             title = "DailySpendOverlay"
         }
     }
@@ -171,8 +190,15 @@ object OverlayManager {
     private fun bind(view: View, info: OverlayInfo) {
         val ctx = view.context
         val status = BudgetStatus(info.totalMinor, info.budgetMinor)
-        val card = view.findViewById<View>(R.id.overlayCard)
-        card.background = cardBackground(ctx, status.isOver)
+        val card = view.findViewById<LinearLayout>(R.id.overlayCard)
+        val full = attachedFull
+        card.background = cardBackground(ctx, status.isOver, cornerDp = if (full) 0f else 28f)
+        card.layoutParams = card.layoutParams.apply {
+            height = if (full) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        card.gravity = if (full) Gravity.CENTER_VERTICAL else Gravity.TOP
+        view.setPadding(if (full) 0 else dp(ctx, 6f).toInt(), if (full) 0 else dp(ctx, 6f).toInt(),
+            if (full) 0 else dp(ctx, 6f).toInt(), if (full) 0 else dp(ctx, 6f).toInt())
 
         view.findViewById<TextView>(R.id.overlayHeader).text = ctx.getString(
             when {
@@ -207,7 +233,9 @@ object OverlayManager {
         extra.text = extraLines.joinToString("\n")
         extra.visibility = if (extraLines.isEmpty()) View.GONE else View.VISIBLE
 
-        view.findViewById<TextView>(R.id.overlayTotal).text = Money.format(info.totalMinor, info.homeCurrency)
+        val totalView = view.findViewById<TextView>(R.id.overlayTotal)
+        totalView.text = Money.format(info.totalMinor, info.homeCurrency)
+        totalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (full) 68f else 54f)
 
         val progress = view.findViewById<ProgressBar>(R.id.overlayProgress)
         applyProgress(ctx, progress, status)
@@ -219,12 +247,16 @@ object OverlayManager {
 
     // ---- עזרים משותפים גם למסך הראשי ----
 
-    /** רקע הכרטיס: כחול רגוע / אדום בולט עם מסגרת לבנה */
+    /**
+     * רקע הכרטיס: הצבע שבחר המשתמש (בבהירות שבחר) כל עוד לא חרגנו; אדום בולט עם מסגרת לבנה בחריגה.
+     * האדום לא מושפע מהבהירות – אזהרה אף פעם לא מוחשכת.
+     */
     fun cardBackground(ctx: Context, over: Boolean, cornerDp: Float = 28f): GradientDrawable {
         val colors = if (over) {
             intArrayOf(ctx.getColor(R.color.over_start), ctx.getColor(R.color.over_end))
         } else {
-            intArrayOf(ctx.getColor(R.color.calm_start), ctx.getColor(R.color.calm_end))
+            val store = SpendStore.get(ctx)
+            Themes.gradient(store.themeColor, store.brightnessPercent)
         }
         return GradientDrawable(GradientDrawable.Orientation.TL_BR, colors).apply {
             cornerRadius = dp(ctx, cornerDp)
@@ -236,7 +268,7 @@ object OverlayManager {
         progress.max = 100
         progress.progress = status.percent.coerceIn(0, 100)
         progress.progressTintList = ColorStateList.valueOf(
-            if (status.isOver) Color.WHITE else ctx.getColor(R.color.calm_progress)
+            if (status.isOver) Color.WHITE else SpendStore.get(ctx).themeColor.progress
         )
     }
 

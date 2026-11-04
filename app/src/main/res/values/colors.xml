@@ -12,10 +12,7 @@
     <color name="ok_green">#4ADE80</color>
     <color name="warn_red">#FF6B6B</color>
 
-    <!-- חלונית: מצב רגוע (מתחת לתקציב) – כחול כהה -->
-    <color name="calm_start">#0B2545</color>
-    <color name="calm_end">#13507A</color>
-    <color name="calm_progress">#7FDBFF</color>
+    <!-- חלונית במצב רגוע: הצבעים נקבעים לפי בחירת המשתמש (core/Theme.kt) -->
 
     <!-- חלונית: חריגה מהתקציב – אדום בולט -->
     <color name="over_start">#B3001B</color>

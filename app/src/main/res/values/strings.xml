@@ -60,6 +60,14 @@
     <string name="budget_invalid">הכנס סכום גדול מ-0</string>
     <string name="shekel">₪</string>
 
+    <!-- מראה החלונית -->
+    <string name="appearance_title">מראה החלונית</string>
+    <string name="appearance_color_label">צבע</string>
+    <string name="appearance_brightness">בהירות: %1$d%%</string>
+    <string name="appearance_full_switch">חלונית במסך מלא (במקום כרטיס)</string>
+    <string name="appearance_note">הצבע והבהירות חלים כל עוד אתה בתוך התקציב. חריגה תמיד מוצגת באדום בולט, בלי קשר לבהירות.</string>
+    <string name="appearance_color_selected">%1$s (נבחר)</string>
+
     <!-- מקורות -->
     <string name="sources_title">מקורות תשלום</string>
     <string name="sources_note">שורה לכל מקור. שם חבילה של אפליקציה = כל ההתראות שלה. sms:שולח = הודעות SMS משולח בשם הזה בדיוק. חבילה|מילה = רק התראות שהכותרת שלהן מכילה את המילה. # = הערה.</string>
