@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- רקע האייקון: כחול כהה כמעט שחור -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="315"
+        android:endColor="#0E2038"
+        android:startColor="#070D18"
+        android:type="linear" />
+</shape>

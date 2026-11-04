@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DailySpendOverlay</string>
-    <string name="listener_label">DailySpendOverlay – זיהוי תשלומים</string>
+    <string name="app_name">Cash Effect</string>
+    <string name="listener_label">Cash Effect – זיהוי תשלומים</string>
     <string name="app_tagline">מציגה לך בגדול כמה הוצאת היום – מיד אחרי כל תשלום.</string>
     <string name="version_fmt">גרסה %1$s (%2$d)</string>
 
@@ -127,7 +127,7 @@
     <string name="update_err_generic">שגיאה בהתקנה: %1$s</string>
     <string name="update_success">העדכון הותקן ✓</string>
     <string name="update_failed">העדכון נכשל (%1$d): %2$s</string>
-    <string name="update_done_toast">DailySpendOverlay עודכנה לגרסה %1$s ✓</string>
+    <string name="update_done_toast">Cash Effect עודכנה לגרסה %1$s ✓</string>
 
     <!-- פרטיות -->
     <string name="privacy_note">🔒 נתוני ההוצאות נשמרים רק בטלפון הזה: אין שרת, אין חשבון, אין גיבוי לענן. אינטרנט משמש רק לבדיקת עדכונים – ורק אם אישרת.</string>
