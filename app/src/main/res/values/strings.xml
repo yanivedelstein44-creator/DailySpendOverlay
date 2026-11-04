@@ -31,6 +31,7 @@
     <string name="overlay_installments_excluded">ב-%1$d תשלומים של %2$s – לא נספר בסכום היומי</string>
     <string name="overlay_converted_online">≈ %1$s לפי שער ECB</string>
     <string name="overlay_converted_builtin">≈ %1$s לפי שער משוער</string>
+    <string name="overlay_work_time">זה %1$s של עבודה</string>
     <string name="overlay_not_counted">לא נכלל בסכום היומי – אין שער המרה למטבע הזה</string>
     <string name="toast_fallback">הוצאת היום: %1$s (עסקה: %2$s)</string>
 
@@ -61,6 +62,12 @@
     <string name="today_no_budget">אין תקציב יומי (אפשר להגדיר למטה)</string>
     <string name="budget_invalid">הכנס סכום גדול מ-0</string>
     <string name="shekel">₪</string>
+
+    <!-- זמן עבודה -->
+    <string name="wage_title">כמה זה שווה בזמן עבודה</string>
+    <string name="wage_note">מגדירים שכר שעתי, והחלונית מוסיפה שורה כמו "זה 25 דקות של עבודה". כבוי כברירת מחדל – השאר ריק כדי לא להציג. כדי להפעיל, כותבים את השכר השעתי ולוחצים שמור.</string>
+    <string name="wage_hint">שכר לשעה</string>
+    <string name="wage_saved_off">זמן עבודה כבוי ✓</string>
 
     <!-- מראה החלונית -->
     <string name="appearance_title">מראה החלונית</string>

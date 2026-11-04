@@ -258,6 +258,56 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- ===== זמן עבודה ===== -->
+        <LinearLayout style="@style/DS.Card">
+
+            <TextView
+                style="@style/DS.CardTitle"
+                android:text="@string/wage_title" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etWage"
+                    style="@style/DS.Input"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/wage_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="numberDecimal"
+                    android:maxLength="9"
+                    android:textDirection="ltr" />
+
+                <TextView
+                    android:id="@+id/tvWageSymbol"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/shekel"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp" />
+
+                <Button
+                    android:id="@+id/btnSaveWage"
+                    style="@style/DS.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btn_save" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/DS.Body"
+                android:layout_marginTop="8dp"
+                android:text="@string/wage_note"
+                android:textSize="13sp" />
+        </LinearLayout>
+
         <!-- ===== מראה החלונית ===== -->
         <LinearLayout style="@style/DS.Card">
 

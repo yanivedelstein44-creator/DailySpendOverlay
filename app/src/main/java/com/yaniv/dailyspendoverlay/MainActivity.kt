@@ -33,6 +33,7 @@ import com.yaniv.dailyspendoverlay.core.FxRates
 import com.yaniv.dailyspendoverlay.core.Money
 import com.yaniv.dailyspendoverlay.core.SourceRules
 import com.yaniv.dailyspendoverlay.core.Themes
+import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.net.FxUpdater
 import com.yaniv.dailyspendoverlay.net.OnlinePurpose
@@ -87,6 +88,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var seekBrightness: SeekBar
     private lateinit var swOverlayFull: Switch
     private lateinit var etRules: EditText
+    private lateinit var etWage: EditText
+    private lateinit var tvWageSymbol: TextView
     private lateinit var sourcesHeader: View
     private lateinit var sourcesBody: View
     private lateinit var tvSourcesArrow: TextView
@@ -221,6 +224,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         seekBrightness = findViewById(R.id.seekBrightness)
         swOverlayFull = findViewById(R.id.swOverlayFull)
         etRules = findViewById(R.id.etRules)
+        etWage = findViewById(R.id.etWage)
+        tvWageSymbol = findViewById(R.id.tvWageSymbol)
         sourcesHeader = findViewById(R.id.sourcesHeader)
         sourcesBody = findViewById(R.id.sourcesBody)
         tvSourcesArrow = findViewById(R.id.tvSourcesArrow)
@@ -295,6 +300,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
                 homeCurrency = home,
                 justCrossed = budget > 0 && total <= budget && newTotal > budget,
                 isPreview = true,
+                workText = WorkTime.describe(sampleMinor, store.hourlyWageMinor),
             )
         )
     }
@@ -367,6 +373,18 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
 
+        findViewById<Button>(R.id.btnSaveWage).setOnClickListener {
+            val raw = etWage.text.toString()
+            val value = if (raw.isBlank()) 0L else Money.parseToMinor(raw)
+            if (value == null) {
+                etWage.error = getString(R.string.budget_invalid)
+                return@setOnClickListener
+            }
+            store.hourlyWageMinor = value // 0 = כבוי
+            hideKeyboard()
+            toast(getString(if (value > 0) R.string.saved else R.string.wage_saved_off))
+        }
+
         swExcludeInstallments.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.excludeInstallments = checked
         }
@@ -383,6 +401,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             etBudget.setText(if (store.budgetMinor > 0) Money.formatNumber(store.budgetMinor).replace(",", "") else "")
         }
         tvBudgetSymbol.text = home.symbol
+        tvWageSymbol.text = home.symbol
+        if (!etWage.hasFocus()) {
+            etWage.setText(if (store.hourlyWageMinor > 0) Money.formatNumber(store.hourlyWageMinor).replace(",", "") else "")
+        }
         selectCurrentCurrency()
         suppressSwitchCallbacks = true
         swExcludeInstallments.isChecked = store.excludeInstallments

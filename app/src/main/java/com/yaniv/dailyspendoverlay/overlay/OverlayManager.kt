@@ -56,6 +56,8 @@ data class OverlayInfo(
     /** עסקה בתשלומים שהוסרה מהסכום (המתג "לא לכלול עסקאות בתשלומים") */
     val reversed: Boolean = false,
     val isPreview: Boolean = false,
+    /** "25 דקות" – כמה זמן עבודה העסקה שווה (רק אם הוגדר שכר שעתי) */
+    val workText: String? = null,
 )
 
 /**
@@ -233,6 +235,9 @@ object OverlayManager {
                 if (info.rateIsOnline) R.string.overlay_converted_online else R.string.overlay_converted_builtin,
                 converted
             )
+        }
+        if (info.workText != null && !info.notCounted && !info.reversed) {
+            extraLines += ctx.getString(R.string.overlay_work_time, info.workText)
         }
         extra.text = extraLines.joinToString("\n")
         extra.visibility = if (extraLines.isEmpty()) View.GONE else View.VISIBLE

@@ -10,6 +10,7 @@ import android.util.Log
 import com.yaniv.dailyspendoverlay.R
 import com.yaniv.dailyspendoverlay.core.Amount
 import com.yaniv.dailyspendoverlay.core.AmountParser
+import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.core.DetectionEntry
 import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.LedgerResult
@@ -146,6 +147,7 @@ class SpendNotificationListener : NotificationListenerService() {
                         budgetMinor = budget,
                         homeCurrency = home,
                         justCrossed = budget > 0 && result.previousTotalMinor <= budget && total > budget,
+                        workText = WorkTime.describe(conversion.homeMinor, store.hourlyWageMinor),
                     )
                 )
             }

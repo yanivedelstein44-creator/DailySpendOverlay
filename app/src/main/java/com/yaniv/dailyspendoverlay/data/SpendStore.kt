@@ -55,6 +55,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_THEME = "theme_color"
         private const val KEY_BRIGHTNESS = "theme_brightness"
         private const val KEY_OVERLAY_FULL = "overlay_full"
+        private const val KEY_WAGE = "hourly_wage_minor"
 
         /** ברירת מחדל: אין תקציב (0). המשתמש מגדיר אם רוצה */
         const val DEFAULT_BUDGET_MINOR = 0L
@@ -171,6 +172,13 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             preferences.edit().putString(KEY_THEME, value.id).apply()
         }
 
+    /** שכר שעתי במטבע הראשי (אגורות/סנטים) לחישוב "זמן עבודה". 0 = כבוי (ברירת מחדל) */
+    var hourlyWageMinor: Long
+        get() = preferences.getLong(KEY_WAGE, 0L)
+        set(value) {
+            preferences.edit().putLong(KEY_WAGE, value.coerceAtLeast(0L)).apply()
+        }
+
     /** גודל החלונית: false = כרטיס, true = מסך מלא */
     var overlayFull: Boolean
         get() = preferences.getBoolean(KEY_OVERLAY_FULL, false)
@@ -242,6 +250,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         preferences.edit()
             .putString(KEY_HOME_CURRENCY, newCode)
             .putLong(KEY_BUDGET, newBudget?.let { roundToWhole(it) } ?: budgetMinor)
+            .putLong(KEY_WAGE, convert(hourlyWageMinor)?.let { roundToWhole(it) } ?: hourlyWageMinor)
             .apply()
         if (newTotal != null && newLastHome != null) {
             saveState(state.copy(totalMinor = newTotal, lastTxHomeMinor = newLastHome))
