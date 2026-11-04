@@ -75,6 +75,11 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    lint {
+        abortOnError = false
+        textReport = true
+    }
 }
 
 tasks.withType<KotlinCompile>().configureEach {

@@ -36,6 +36,17 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Unit tests + compile check (no signing needed)
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest compileReleaseKotlin
+
+      - name: Lint (report only)
+        continue-on-error: true
+        run: |
+          ./gradlew --no-daemon lintDebug || true
+          cat app/build/reports/lint-results-debug.txt 2>/dev/null | tail -150 || true
+
       - name: Check signing secret
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -44,13 +55,6 @@ jobs:
             echo "::error::Missing secret KEYSTORE_PASSWORD (Settings → Secrets and variables → Actions)"
             exit 1
           fi
-
-      - name: Unit tests
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon testDebugUnitTest
 
       - name: Build signed APK
         env:
