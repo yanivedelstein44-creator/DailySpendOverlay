@@ -62,6 +62,17 @@ class MiscCoreTest {
         assertTrue(rules.matches("com.google.android.apps.walletnfcrel", "x"))
     }
 
+    @Test fun creditCardSourcesAreRecognised() {
+        assertTrue(SourceRules.isCreditCardSource("com.ideomobile.leumicard", "x"))        // Max
+        assertTrue(SourceRules.isCreditCardSource("com.isracard.hatavot", "x"))
+        assertTrue(SourceRules.isCreditCardSource("com.google.android.apps.messaging", "\u200FMAX"))
+        assertTrue(SourceRules.isCreditCardSource("com.samsung.android.messaging", "ישראכרט"))
+        assertFalse(SourceRules.isCreditCardSource("com.google.android.apps.walletnfcrel", "x"))
+        assertFalse(SourceRules.isCreditCardSource("com.bnhp.payments.paymentsapp", "x"))   // bit
+        assertFalse(SourceRules.isCreditCardSource("com.google.android.apps.messaging", "leumi"))
+        assertFalse(SourceRules.isCreditCardSource("com.whatsapp", "max"))
+    }
+
     @Test fun appendRuleOnce() {
         val once = SourceRules.appendRule("a.b.c", "com.bank.app", "Bank")
         assertEquals("a.b.c\ncom.bank.app   # Bank", once)

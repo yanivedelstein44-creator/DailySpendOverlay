@@ -95,6 +95,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var swOverlayFull: Switch
     private lateinit var swOnUnlock: Switch
     private lateinit var swLogUnlisted: Switch
+    private lateinit var swIgnoreCards: Switch
     private lateinit var swLockScreen: Switch
     private lateinit var tvLockStatus: TextView
     private lateinit var btnLockGrant: Button
@@ -241,6 +242,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull = findViewById(R.id.swOverlayFull)
         swOnUnlock = findViewById(R.id.swOnUnlock)
         swLogUnlisted = findViewById(R.id.swLogUnlisted)
+        swIgnoreCards = findViewById(R.id.swIgnoreCards)
         swLockScreen = findViewById(R.id.swLockScreen)
         tvLockStatus = findViewById(R.id.tvLockStatus)
         btnLockGrant = findViewById(R.id.btnLockGrant)
@@ -550,6 +552,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swLogUnlisted.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.logUnlisted = checked
         }
+        swIgnoreCards.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.ignoreCreditCards = checked
+        }
         swOnUnlock.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.showOnUnlock = checked
         }
@@ -574,6 +579,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull.isChecked = store.overlayFull
         swOnUnlock.isChecked = store.showOnUnlock
         swLogUnlisted.isChecked = store.logUnlisted
+        swIgnoreCards.isChecked = store.ignoreCreditCards
         swLockScreen.isChecked = store.showOnLockScreen
         suppressSwitchCallbacks = false
         refreshLockScreen()

@@ -19,6 +19,7 @@ import com.yaniv.dailyspendoverlay.core.DetectionEntry
 import com.yaniv.dailyspendoverlay.core.DeviceEvents
 import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.LedgerResult
+import com.yaniv.dailyspendoverlay.core.SourceRules
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.overlay.OverlayInfo
 import com.yaniv.dailyspendoverlay.overlay.LockScreenBubbleActivity
@@ -182,6 +183,10 @@ class SpendNotificationListener : NotificationListenerService() {
         if (!listed) {
             // מקור שלא ברשימה אף פעם לא נספר. נרשם ביומן רק אם המשתמש ביקש (כדי לגלות מקורות חדשים)
             if (store.logUnlisted) log(DetectionStatus.NOT_LISTED)
+            return
+        }
+        if (store.ignoreCreditCards && SourceRules.isCreditCardSource(pkg, content.title)) {
+            log(DetectionStatus.EXCLUDED, getString(R.string.log_credit_card_ignored))
             return
         }
         if (parsed !is AmountParser.Result.Expense) {
