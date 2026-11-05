@@ -36,22 +36,6 @@ class SourceRules private constructor(
             "com.android.messaging",             // AOSP
         )
 
-        /** אפליקציות של חברות אשראי (ולא בנקים / ארנקים / bit) – למתג "לא לספור כרטיסי אשראי" */
-        val CREDIT_CARD_PACKAGES: Set<String> = setOf(
-            "com.ideomobile.leumicard",       // Max
-            "com.isracard.hatavot",           // ישראכרט
-            "com.onoapps.cal4u",              // כאל
-            "com.americanexpress.android",    // אמריקן אקספרס
-        )
-
-        /** שולחי SMS של חברות אשראי (מנורמל) */
-        val CREDIT_CARD_SMS_SENDERS: Set<String> = setOf("max", "isracard", "ישראכרט", "cal", "כאל")
-
-        /** האם ההתראה באה מחברת אשראי (אפליקציה או SMS) */
-        fun isCreditCardSource(packageName: String, title: String): Boolean =
-            packageName in CREDIT_CARD_PACKAGES ||
-                (packageName in SMS_APPS && normalize(title) in CREDIT_CARD_SMS_SENDERS)
-
         val DEFAULT_TEXT: String = """
             # ארנקים דיגיטליים
             com.google.android.apps.walletnfcrel   # Google Wallet

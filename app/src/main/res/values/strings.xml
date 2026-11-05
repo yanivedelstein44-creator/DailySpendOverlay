@@ -118,8 +118,17 @@
 
     <!-- יומן זיהוי -->
     <string name="log_title">התראות אחרונות עם סכום</string>
-    <string name="ignore_cards_switch">לא לספור כרטיסי אשראי (Max, ישראכרט, כאל, אמריקן אקספרס)</string>
-    <string name="log_credit_card_ignored">כרטיס אשראי – כבוי במתג</string>
+    <string name="sources_switches_note">מה לספור. מקור שהוספת בעצמך לרשימה תמיד נספר.</string>
+    <string name="src_google_wallet">Google Wallet</string>
+    <string name="src_samsung_wallet">Samsung Wallet</string>
+    <string name="src_bit">bit</string>
+    <string name="src_paybox">PayBox</string>
+    <string name="src_credit_cards">כרטיסי אשראי (Max, ישראכרט, כאל, אמקס)</string>
+    <string name="src_banks">אפליקציות בנקים (לאומי, הפועלים, דיסקונט)</string>
+    <string name="src_sms">SMS מחברות אשראי ובנקים</string>
+    <string name="log_source_off">סוג המקור כבוי במתג</string>
+    <string name="sources_summary_active">נספר: %1$s · לחץ כדי לפתוח ולערוך</string>
+    <string name="sources_summary_none">אף סוג מקור לא דלוק · לחץ כדי לפתוח ולערוך</string>
     <string name="log_unlisted_switch">לרשום גם התראות מאפליקציות שלא ברשימה</string>
     <string name="log_note">כאן רואים אם תשלום נקלט, ולמה. רק מקורות מהרשימה נספרים, תמיד. כדי לגלות מקור חדש מדליקים את המתג למעלה, ואז לוחצים \"הוסף\" ליד תשלום שפספסנו.</string>
     <string name="log_empty">עוד לא זוהו התראות עם סכום.</string>

@@ -62,15 +62,30 @@ class MiscCoreTest {
         assertTrue(rules.matches("com.google.android.apps.walletnfcrel", "x"))
     }
 
-    @Test fun creditCardSourcesAreRecognised() {
-        assertTrue(SourceRules.isCreditCardSource("com.ideomobile.leumicard", "x"))        // Max
-        assertTrue(SourceRules.isCreditCardSource("com.isracard.hatavot", "x"))
-        assertTrue(SourceRules.isCreditCardSource("com.google.android.apps.messaging", "\u200FMAX"))
-        assertTrue(SourceRules.isCreditCardSource("com.samsung.android.messaging", "ישראכרט"))
-        assertFalse(SourceRules.isCreditCardSource("com.google.android.apps.walletnfcrel", "x"))
-        assertFalse(SourceRules.isCreditCardSource("com.bnhp.payments.paymentsapp", "x"))   // bit
-        assertFalse(SourceRules.isCreditCardSource("com.google.android.apps.messaging", "leumi"))
-        assertFalse(SourceRules.isCreditCardSource("com.whatsapp", "max"))
+    @Test fun sourceCategoriesAreRecognised() {
+        assertEquals(SourceCategory.GOOGLE_WALLET, SourceCategory.of("com.google.android.apps.walletnfcrel", "x"))
+        assertEquals(SourceCategory.BIT, SourceCategory.of("com.bnhp.payments.paymentsapp", "x"))
+        assertEquals(SourceCategory.PAYBOX, SourceCategory.of("com.payboxapp", "x"))
+        assertEquals(SourceCategory.SAMSUNG_WALLET, SourceCategory.of("com.samsung.android.spay", "x"))
+        assertEquals(SourceCategory.CREDIT_CARDS, SourceCategory.of("com.ideomobile.leumicard", "x")) // Max
+        assertEquals(SourceCategory.CREDIT_CARDS, SourceCategory.of("com.isracard.hatavot", "x"))
+        assertEquals(SourceCategory.BANKS, SourceCategory.of("com.ideomobile.hapoalim", "x"))
+        assertEquals(SourceCategory.SMS, SourceCategory.of("com.google.android.apps.messaging", "\u200FMAX"))
+        assertEquals(SourceCategory.SMS, SourceCategory.of("com.samsung.android.messaging", "ישראכרט"))
+    }
+
+    @Test fun customSourcesHaveNoCategoryAndAlwaysCount() {
+        assertNull(SourceCategory.of("com.my.custom.app", "x"))
+        assertNull(SourceCategory.of("com.google.android.apps.messaging", "Pango"))   // SMS שהמשתמש הוסיף בעצמו
+        assertNull(SourceCategory.of("com.whatsapp", "max"))
+        assertTrue(SourceCategory.isCounted(null) { false })
+    }
+
+    @Test fun onlyWalletBitAndPayboxAreOnByDefault() {
+        val on = SourceCategory.values().filter { it.defaultOn }.toSet()
+        assertEquals(setOf(SourceCategory.GOOGLE_WALLET, SourceCategory.BIT, SourceCategory.PAYBOX), on)
+        assertFalse(SourceCategory.isCounted(SourceCategory.CREDIT_CARDS) { it.defaultOn })
+        assertTrue(SourceCategory.isCounted(SourceCategory.GOOGLE_WALLET) { it.defaultOn })
     }
 
     @Test fun appendRuleOnce() {

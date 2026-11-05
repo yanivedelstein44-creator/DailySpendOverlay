@@ -14,6 +14,7 @@ import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.FxRates
 import com.yaniv.dailyspendoverlay.core.FxTable
 import com.yaniv.dailyspendoverlay.core.LedgerResult
+import com.yaniv.dailyspendoverlay.core.SourceCategory
 import com.yaniv.dailyspendoverlay.core.LedgerState
 import com.yaniv.dailyspendoverlay.core.LogReplay
 import com.yaniv.dailyspendoverlay.core.ResetBackup
@@ -64,7 +65,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_OVERLAY_FULL = "overlay_full"
         private const val KEY_ON_UNLOCK = "show_on_unlock"
         private const val KEY_LOG_UNLISTED = "log_unlisted"
-        private const val KEY_IGNORE_CARDS = "ignore_credit_cards"
+        private const val KEY_SOURCE_PREFIX = "source_on_"
         private const val KEY_LOCK_SCREEN = "show_on_lock_screen"
         private const val KEY_PENDING_UNLOCK = "pending_unlock_millis"
         private const val KEY_UNDO_DAY = "reset_undo_day"
@@ -249,12 +250,13 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             preferences.edit().putBoolean(KEY_ASKED_NOTIF_PERM, value).apply()
         }
 
-    /** לא לספור התראות מחברות אשראי (Max, ישראכרט, כאל, אמקס – אפליקציה ו-SMS). דלוק כברירת מחדל */
-    var ignoreCreditCards: Boolean
-        get() = preferences.getBoolean(KEY_IGNORE_CARDS, true)
-        set(value) {
-            preferences.edit().putBoolean(KEY_IGNORE_CARDS, value).apply()
-        }
+    /** האם סוג מקור נספר (מתג לכל סוג; ברירת המחדל לפי [SourceCategory.defaultOn]) */
+    fun isSourceEnabled(category: SourceCategory): Boolean =
+        preferences.getBoolean(KEY_SOURCE_PREFIX + category.name.lowercase(), category.defaultOn)
+
+    fun setSourceEnabled(category: SourceCategory, enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_SOURCE_PREFIX + category.name.lowercase(), enabled).apply()
+    }
 
     /** לרשום ביומן גם התראות עם סכום מאפליקציות שלא ברשימת המקורות (כדי שאפשר להוסיף אותן). כבוי כברירת מחדל */
     var logUnlisted: Boolean

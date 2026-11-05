@@ -33,6 +33,7 @@ import com.yaniv.dailyspendoverlay.core.DetectionEntry
 import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.FxRates
 import com.yaniv.dailyspendoverlay.core.Money
+import com.yaniv.dailyspendoverlay.core.SourceCategory
 import com.yaniv.dailyspendoverlay.core.SourceRules
 import com.yaniv.dailyspendoverlay.core.Themes
 import com.yaniv.dailyspendoverlay.core.WorkTime
@@ -95,7 +96,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var swOverlayFull: Switch
     private lateinit var swOnUnlock: Switch
     private lateinit var swLogUnlisted: Switch
-    private lateinit var swIgnoreCards: Switch
+    private lateinit var sourceSwitches: LinearLayout
     private lateinit var swLockScreen: Switch
     private lateinit var tvLockStatus: TextView
     private lateinit var btnLockGrant: Button
@@ -242,7 +243,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull = findViewById(R.id.swOverlayFull)
         swOnUnlock = findViewById(R.id.swOnUnlock)
         swLogUnlisted = findViewById(R.id.swLogUnlisted)
-        swIgnoreCards = findViewById(R.id.swIgnoreCards)
+        sourceSwitches = findViewById(R.id.sourceSwitches)
         swLockScreen = findViewById(R.id.swLockScreen)
         tvLockStatus = findViewById(R.id.tvLockStatus)
         btnLockGrant = findViewById(R.id.btnLockGrant)
@@ -255,6 +256,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         etWorkHours = findViewById(R.id.etWorkHours)
         sourcesHeader = findViewById(R.id.sourcesHeader)
         sourcesBody = findViewById(R.id.sourcesBody)
+        buildSourceSwitches()
         tvSourcesArrow = findViewById(R.id.tvSourcesArrow)
         tvSourcesSummary = findViewById(R.id.tvSourcesSummary)
         tvLogEmpty = findViewById(R.id.tvLogEmpty)
@@ -552,9 +554,6 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swLogUnlisted.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.logUnlisted = checked
         }
-        swIgnoreCards.setOnCheckedChangeListener { _, checked ->
-            if (!suppressSwitchCallbacks) store.ignoreCreditCards = checked
-        }
         swOnUnlock.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.showOnUnlock = checked
         }
@@ -579,7 +578,6 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull.isChecked = store.overlayFull
         swOnUnlock.isChecked = store.showOnUnlock
         swLogUnlisted.isChecked = store.logUnlisted
-        swIgnoreCards.isChecked = store.ignoreCreditCards
         swLockScreen.isChecked = store.showOnLockScreen
         suppressSwitchCallbacks = false
         refreshLockScreen()
@@ -744,10 +742,45 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         refreshSourcesSummary()
     }
 
+    private fun sourceLabel(c: SourceCategory): Int = when (c) {
+        SourceCategory.GOOGLE_WALLET -> R.string.src_google_wallet
+        SourceCategory.SAMSUNG_WALLET -> R.string.src_samsung_wallet
+        SourceCategory.BIT -> R.string.src_bit
+        SourceCategory.PAYBOX -> R.string.src_paybox
+        SourceCategory.CREDIT_CARDS -> R.string.src_credit_cards
+        SourceCategory.BANKS -> R.string.src_banks
+        SourceCategory.SMS -> R.string.src_sms
+    }
+
+    /** מתג לכל סוג מקור (נבנה פעם אחת) */
+    private fun buildSourceSwitches() {
+        sourceSwitches.removeAllViews()
+        for (category in SourceCategory.values()) {
+            val sw = Switch(this)
+            sw.text = getString(sourceLabel(category))
+            sw.setTextColor(getColor(R.color.text_primary))
+            sw.textSize = 15f
+            sw.minimumHeight = (44 * resources.displayMetrics.density).toInt()
+            sw.isChecked = store.isSourceEnabled(category)
+            sw.setOnCheckedChangeListener { _, checked ->
+                store.setSourceEnabled(category, checked)
+                refreshSourcesSummary()
+            }
+            sourceSwitches.addView(
+                sw,
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT),
+            )
+        }
+    }
+
     private fun refreshSourcesSummary() {
         val open = sourcesBody.visibility == View.VISIBLE
-        val count = store.rulesText.lines().count { it.isNotBlank() && !it.trimStart().startsWith("#") }
-        tvSourcesSummary.text = if (open) getString(R.string.sources_summary_open) else getString(R.string.sources_summary, count)
+        val on = SourceCategory.values().filter { store.isSourceEnabled(it) }.joinToString(", ") { getString(sourceLabel(it)) }
+        tvSourcesSummary.text = when {
+            open -> getString(R.string.sources_summary_open)
+            on.isEmpty() -> getString(R.string.sources_summary_none)
+            else -> getString(R.string.sources_summary_active, on)
+        }
     }
 
     // ==================================================================
