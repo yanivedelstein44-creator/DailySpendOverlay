@@ -23,7 +23,7 @@ data class LedgerState(
     val lastTx: Amount? = null,
     /** העסקה האחרונה אחרי המרה למטבע הראשי */
     val lastTxHomeMinor: Long = 0,
-    /** סכומים מה-10 דקות האחרונות (חלון הכפילויות) */
+    /** סכומים מהשעה האחרונה (חלון הכפילויות) */
     val recentAmounts: List<RecentAmount> = emptyList(),
     /** טביעות של התראות שכבר טופלו (מזהה התראה + זמן + סכום) */
     val fingerprints: List<String> = emptyList(),
@@ -63,14 +63,14 @@ data class BudgetStatus(val totalMinor: Long, val budgetMinor: Long) {
 /**
  * הלוגיקה הטהורה של החישוב היומי (בלי אנדרואיד – נבדקת בבדיקות יחידה):
  *  • יום חדש → הסכום המצטבר מתאפס ל-0 לפני הוספת העסקה.
- *  • אותו סכום באותו מטבע שוב תוך 10 דקות → כפילות
+ *  • אותו סכום באותו מטבע שוב תוך שעה → כפילות
  *    (למשל Google Wallet + אפליקציית האשראי על אותה קנייה).
  *    החלון "מחליק": כל הופעה חוזרת מאריכה אותו, כך שגם הודעה שלישית (SMS) לא נספרת.
- *  • אותה התראה שעודכנה/פורסמה מחדש (אותה טביעה) → כפילות, גם אחרי 10 דקות.
+ *  • אותה התראה שעודכנה/פורסמה מחדש (אותה טביעה) → כפילות, גם אחרי שעה.
  */
 object DailyLedger {
 
-    const val DUPLICATE_WINDOW_MS = 600_000L
+    const val DUPLICATE_WINDOW_MS = 3_600_000L
     private const val MAX_FINGERPRINTS = 40
 
     /** מחזיר את המצב של "היום": אם התאריך התחלף – הסכומים מתאפסים */
@@ -104,7 +104,7 @@ object DailyLedger {
             val refreshed = recent.toMutableList().apply { this[dupIndex] = previous.copy(atMillis = nowMillis) }
             return LedgerResult.Duplicate(
                 current.copy(recentAmounts = refreshed, fingerprints = addFingerprint(current.fingerprints, fingerprint)),
-                if (previous.counted) "אותו סכום תוך 10 דקות" else "שייך לעסקה בתשלומים שהוחרגה",
+                if (previous.counted) "אותו סכום תוך שעה" else "שייך לעסקה בתשלומים שהוחרגה",
             )
         }
 

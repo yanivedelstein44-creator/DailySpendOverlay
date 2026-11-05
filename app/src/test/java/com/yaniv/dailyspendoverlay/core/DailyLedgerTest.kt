@@ -40,24 +40,32 @@ class DailyLedgerTest {
         assertNull(shown.lastTx)
     }
 
-    @Test fun sameAmountWithin10MinutesIsDuplicate() {
+    @Test fun sameAmountWithinTheWindowIsDuplicate() {
         val a = count(LedgerState(), ils(4590), t0, fp = "wallet")
         val b = count(a.state, ils(4590), t0 + 360_000, fp = "card")
         assertTrue(b is LedgerResult.Duplicate)
         assertEquals(4590L, b.state.totalMinor)
     }
 
-    @Test fun sameAmountAfter10MinutesCounts() {
+    @Test fun walletRepostTwentyFourMinutesLaterIsDuplicate() {
+        // מהיום האמיתי: שופרסל 101.65 ב-15:42, ושוב ב-16:06 עם שם מתוקן
+        val a = count(LedgerState(), ils(10165), t0)
+        val b = count(a.state, ils(10165), t0 + 24 * 60_000L)
+        assertTrue(b is LedgerResult.Duplicate)
+        assertEquals(10165L, b.state.totalMinor)
+    }
+
+    @Test fun sameAmountAfterAnHourCounts() {
         val a = count(LedgerState(), ils(1200), t0)
-        val b = count(a.state, ils(1200), t0 + 601_000)
+        val b = count(a.state, ils(1200), t0 + 3_601_000)
         assertTrue(b is LedgerResult.Counted)
         assertEquals(2400L, b.state.totalMinor)
     }
 
     @Test fun slidingWindowCatchesThirdReport() {
         val a = count(LedgerState(), ils(4590), t0)
-        val b = count(a.state, ils(4590), t0 + 400_000)   // כפילות – מאריכה את החלון
-        val c = count(b.state, ils(4590), t0 + 900_000)   // 14 דקות מהעסקה, 10 דקות פחות רגע מהכפילות
+        val b = count(a.state, ils(4590), t0 + 40 * 60_000L)   // כפילות – מאריכה את החלון
+        val c = count(b.state, ils(4590), t0 + 90 * 60_000L)   // 90 דקות מהעסקה, אבל 50 דקות מהכפילות
         assertTrue(b is LedgerResult.Duplicate)
         assertTrue(c is LedgerResult.Duplicate)
         assertEquals(4590L, c.state.totalMinor)

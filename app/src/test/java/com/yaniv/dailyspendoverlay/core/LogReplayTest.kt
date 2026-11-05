@@ -17,7 +17,7 @@ class LogReplayTest {
         assertEquals(ils(25000), state.lastTx)
     }
 
-    @Test fun duplicatesWithinTenMinutesCountOnce() {
+    @Test fun duplicatesWithinTheWindowCountOnce() {
         // מהיומן האמיתי: 70.10 ב-08:42 ושוב ב-08:47, 175.35 ב-08:42 ושוב ב-08:48
         val state = LogReplay.rebuild(
             listOf(at(0, 7010), at(0, 17535), at(5, 7010), at(5, 1390), at(6, 17535), at(163, 25000)),
@@ -25,6 +25,26 @@ class LogReplayTest {
         )
         assertEquals(7010L + 17535 + 1390 + 25000, state.totalMinor)
         assertEquals(4, state.count)
+    }
+
+    @Test fun realDayFromTheUserLogMatchesTheCardStatement() {
+        // היומן של 05/11: Wallet שלח שוב את שופרסל 101.65 ואת המאפייה 27.43 אחרי 16-24 דקות.
+        // החיובים האמיתיים בכרטיס: 175.35 + 70.10 + 13.90 + 250 + 101.65 + 27.43 + 149 = 787.43
+        val state = LogReplay.rebuild(
+            listOf(
+                at(0, 7010), at(0, 17535),          // 08:42
+                at(5, 7010), at(5, 1390),           // 08:47
+                at(6, 17535),                       // 08:48
+                at(163, 25000),                     // 11:25 bit
+                at(420, 10165),                     // 15:42 שופרסל
+                at(428, 2743),                      // 15:50 המאפייה
+                at(444, 10165), at(444, 14900),     // 16:06 שופרסל שוב + המעיין
+                at(445, 2743),                      // 16:07 המאפייה שוב
+            ),
+            today,
+        )
+        assertEquals(78743L, state.totalMinor)
+        assertEquals(7, state.count)
     }
 
     @Test fun orderDoesNotMatter() {

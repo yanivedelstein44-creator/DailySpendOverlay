@@ -22,7 +22,7 @@
 ## מבנה
 - `core/` – לוגיקה טהורה עם בדיקות יחידה:
   - `AmountParser` – Regex לסכום, מטבע ותשלומים.
-  - `DailyLedger` – סכום יומי, איפוס יומי, כפילויות 10 דקות, החרגת תשלומים.
+  - `DailyLedger` – סכום יומי, איפוס יומי, כפילויות שעה, החרגת תשלומים.
   - `Currencies`, `FxRates`, `SourceRules`, `DetectionLog`.
 - `data/SpendStore` – SharedPreferences.
 - `listener/` – קליטת התראות.

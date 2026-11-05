@@ -325,19 +325,24 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         }
         cardToday.background = OverlayManager.cardBackground(this, status.isOver, cornerDp = 18f)
 
-        // "שחזר": אחרי איפוס (מהגיבוי), או – אם אין גיבוי – כשהיומן מראה יותר ממה שנספר עכשיו
+        // "שחזר": אחרי איפוס (מהגיבוי), או – אם אין גיבוי – כשהסכום מהיומן שונה ממה שנספר עכשיו
         val restore = findViewById<Button>(R.id.btnRestoreToday)
         val backup = store.restorableToday()
         val fromLog = if (backup != null) null
         else store.rebuildTodayFromLog(getString(R.string.log_installments_excluded))
-            ?.takeIf { it.totalMinor - today.totalMinor >= RESTORE_FROM_LOG_MIN_DIFF_MINOR }
+            ?.takeIf { kotlin.math.abs(it.totalMinor - today.totalMinor) >= RESTORE_FROM_LOG_MIN_DIFF_MINOR }
         when {
             backup != null -> {
                 restore.text = getString(R.string.btn_restore_today, Money.format(backup.totalMinor, home))
                 restore.visibility = View.VISIBLE
             }
             fromLog != null -> {
-                restore.text = getString(R.string.btn_restore_from_log, Money.format(fromLog.totalMinor, home))
+                // היומן מראה פחות ממה שנספר = כפילויות שנספרו פעמיים → "תקן"; יותר = "שחזר"
+                val fix = fromLog.totalMinor < today.totalMinor
+                restore.text = getString(
+                    if (fix) R.string.btn_fix_from_log else R.string.btn_restore_from_log,
+                    Money.format(fromLog.totalMinor, home),
+                )
                 restore.visibility = View.VISIBLE
             }
             else -> restore.visibility = View.GONE

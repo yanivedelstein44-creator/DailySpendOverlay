@@ -158,7 +158,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
     }
 
     /**
-     * רושם עסקה: מאפס אם התחלף היום, מסנן כפילויות (10 דקות), מוסיף לסכום ושומר.
+     * רושם עסקה: מאפס אם התחלף היום, מסנן כפילויות (שעה), מוסיף לסכום ושומר.
      * @param homeMinor הסכום אחרי המרה למטבע הראשי
      */
     @Synchronized
