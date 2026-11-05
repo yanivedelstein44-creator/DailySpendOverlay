@@ -70,4 +70,8 @@ jobs:
           git add -A
           git -c user.name="emulator-test" -c user.email="emulator-test@users.noreply.github.com" \
             commit -q -m "Emulator results, run ${{ github.run_id }}"
-          git push -q -f "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" emulator-results
+          for attempt in 1 2 3 4; do
+            git push -q -f "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" emulator-results && exit 0
+            echo "push failed (attempt $attempt), retrying..."; sleep $((attempt * 10))
+          done
+          exit 1
