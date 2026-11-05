@@ -1,13 +1,13 @@
 # בדיקה על אמולטור אנדרואיד – מופעלת ידנית (Actions → Emulator test → Run workflow, או gh workflow run).
 # לא נוגעת בטלפון של המשתמש ולא בכסף אמיתי: ה"תשלומים" הם התראות טקסט באמולטור.
-# התוצאה: צילומי מסך + לוגים בתוך Artifact בשם emulator-results.
+# התוצאה: צילומי מסך + לוגים, גם כ-Artifact וגם בענף emulator-results (כדי שאפשר יהיה למשוך אותם ב-git).
 name: Emulator test
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # רק כדי לדחוף את התוצאות לענף emulator-results
 
 jobs:
   emulator:
@@ -57,3 +57,17 @@ jobs:
           name: emulator-results
           path: emulator-results/
           if-no-files-found: warn
+
+      - name: Publish results to the emulator-results branch
+        if: always()
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          test -d emulator-results || exit 0
+          cd emulator-results
+          git init -q
+          git checkout -q -b emulator-results
+          git add -A
+          git -c user.name="emulator-test" -c user.email="emulator-test@users.noreply.github.com" \
+            commit -q -m "Emulator results, run ${{ github.run_id }}"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" emulator-results
