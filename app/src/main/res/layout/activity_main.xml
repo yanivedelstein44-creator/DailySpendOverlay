@@ -529,6 +529,15 @@
                 style="@style/DS.CardTitle"
                 android:text="@string/log_title" />
 
+            <Switch
+                android:id="@+id/swLogUnlisted"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="44dp"
+                android:text="@string/log_unlisted_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
             <TextView
                 style="@style/DS.Body"
                 android:text="@string/log_note"

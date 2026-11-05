@@ -57,6 +57,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_BRIGHTNESS = "theme_brightness"
         private const val KEY_OVERLAY_FULL = "overlay_full"
         private const val KEY_ON_UNLOCK = "show_on_unlock"
+        private const val KEY_LOG_UNLISTED = "log_unlisted"
         private const val KEY_WAGE = "hourly_wage_minor"
         private const val KEY_WAGE_MONTHLY = "monthly_wage_minor"
         private const val KEY_WORK_HOURS = "work_hours_month"
@@ -209,6 +210,13 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_ON_UNLOCK, false)
         set(value) {
             preferences.edit().putBoolean(KEY_ON_UNLOCK, value).apply()
+        }
+
+    /** לרשום ביומן גם התראות עם סכום מאפליקציות שלא ברשימת המקורות (כדי שאפשר להוסיף אותן). כבוי כברירת מחדל */
+    var logUnlisted: Boolean
+        get() = preferences.getBoolean(KEY_LOG_UNLISTED, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_LOG_UNLISTED, value).apply()
         }
 
     /** בהירות החלונית באחוזים (0–100, ברירת מחדל 50) */

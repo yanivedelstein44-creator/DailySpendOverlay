@@ -147,7 +147,8 @@ class SpendNotificationListener : NotificationListenerService() {
         )
 
         if (!listed) {
-            log(DetectionStatus.NOT_LISTED)
+            // מקור שלא ברשימה אף פעם לא נספר. נרשם ביומן רק אם המשתמש ביקש (כדי לגלות מקורות חדשים)
+            if (store.logUnlisted) log(DetectionStatus.NOT_LISTED)
             return
         }
         if (parsed !is AmountParser.Result.Expense) {

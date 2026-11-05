@@ -88,6 +88,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var seekBrightness: SeekBar
     private lateinit var swOverlayFull: Switch
     private lateinit var swOnUnlock: Switch
+    private lateinit var swLogUnlisted: Switch
     private lateinit var etRules: EditText
     private lateinit var etWage: EditText
     private lateinit var tvWageSymbol: TextView
@@ -229,6 +230,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         seekBrightness = findViewById(R.id.seekBrightness)
         swOverlayFull = findViewById(R.id.swOverlayFull)
         swOnUnlock = findViewById(R.id.swOnUnlock)
+        swLogUnlisted = findViewById(R.id.swLogUnlisted)
         etRules = findViewById(R.id.etRules)
         etWage = findViewById(R.id.etWage)
         tvWageSymbol = findViewById(R.id.tvWageSymbol)
@@ -474,6 +476,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.overlayFull = checked
         }
+        swLogUnlisted.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.logUnlisted = checked
+        }
         swOnUnlock.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.showOnUnlock = checked
         }
@@ -497,6 +502,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         suppressSwitchCallbacks = true
         swOverlayFull.isChecked = store.overlayFull
         swOnUnlock.isChecked = store.showOnUnlock
+        swLogUnlisted.isChecked = store.logUnlisted
         suppressSwitchCallbacks = false
         buildSwatches()
     }
