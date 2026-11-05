@@ -20,6 +20,7 @@ import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.LedgerResult
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.overlay.OverlayInfo
+import com.yaniv.dailyspendoverlay.overlay.LockScreenNotifier
 import com.yaniv.dailyspendoverlay.overlay.OverlayManager
 
 /**
@@ -166,8 +167,7 @@ class SpendNotificationListener : NotificationListenerService() {
             log(DetectionStatus.EXCLUDED, getString(R.string.log_installments_excluded))
             if (result is LedgerResult.Reversed) {
                 // Google Wallet (בלי פרטי תשלומים) כבר ספר את הקנייה – מראים את הסכום המתוקן
-                OverlayManager.show(
-                    this,
+                announce(
                     OverlayInfo(
                         lastTx = amount, lastTxHomeMinor = null,
                         installments = parsed.installments, perInstallment = parsed.perInstallment,
@@ -184,8 +184,7 @@ class SpendNotificationListener : NotificationListenerService() {
             // מטבע בלי שום שער ידוע: מראים את העסקה, אבל לא מוסיפים לסכום היומי
             log(DetectionStatus.NO_RATE, amount.currency)
             val today = store.todaySnapshot()
-            OverlayManager.show(
-                this,
+            announce(
                 OverlayInfo(
                     lastTx = amount, lastTxHomeMinor = null, notCounted = true,
                     installments = parsed.installments, perInstallment = parsed.perInstallment,
@@ -202,8 +201,7 @@ class SpendNotificationListener : NotificationListenerService() {
             is LedgerResult.Counted -> {
                 log(DetectionStatus.COUNTED, parsed.installments?.let { "$it תשלומים" } ?: "")
                 val total = result.state.totalMinor
-                OverlayManager.show(
-                    this,
+                announce(
                     OverlayInfo(
                         lastTx = amount,
                         lastTxHomeMinor = if (amount.currency != home) conversion.homeMinor else null,
@@ -221,6 +219,12 @@ class SpendNotificationListener : NotificationListenerService() {
             is LedgerResult.Duplicate -> log(DetectionStatus.DUPLICATE, result.reason)
             is LedgerResult.Excluded, is LedgerResult.Reversed -> Unit // לא קורה ב-register
         }
+    }
+
+    /** תשלום זוהה: חלונית צפה (כשהטלפון פתוח) + התראה קצרה (כשהטלפון נעול) */
+    private fun announce(info: OverlayInfo) {
+        OverlayManager.show(this, info)
+        LockScreenNotifier.show(this, info)
     }
 
     /** שם האפליקציה ששלחה את ההתראה (ליומן בלבד) */

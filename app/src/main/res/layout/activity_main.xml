@@ -426,6 +426,38 @@
                 android:text="@string/unlock_note"
                 android:textSize="13sp" />
 
+            <Switch
+                android:id="@+id/swLockScreen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:minHeight="44dp"
+                android:text="@string/lock_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:text="@string/lock_note"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvLockStatus"
+                style="@style/DS.Body"
+                android:layout_marginTop="6dp"
+                android:text="@string/lock_perm_missing"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnLockGrant"
+                style="@style/DS.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/btn_grant"
+                android:visibility="gone" />
+
             <TextView
                 style="@style/DS.Body"
                 android:layout_marginTop="8dp"

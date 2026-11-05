@@ -58,6 +58,8 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_OVERLAY_FULL = "overlay_full"
         private const val KEY_ON_UNLOCK = "show_on_unlock"
         private const val KEY_LOG_UNLISTED = "log_unlisted"
+        private const val KEY_LOCK_SCREEN = "show_on_lock_screen"
+        private const val KEY_ASKED_NOTIF_PERM = "asked_notification_permission"
         private const val KEY_WAGE = "hourly_wage_minor"
         private const val KEY_WAGE_MONTHLY = "monthly_wage_minor"
         private const val KEY_WORK_HOURS = "work_hours_month"
@@ -210,6 +212,20 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_ON_UNLOCK, false)
         set(value) {
             preferences.edit().putBoolean(KEY_ON_UNLOCK, value).apply()
+        }
+
+    /** התראה קצרה עם הסכום היומי במסך הנעילה (כשהטלפון נעול בזמן תשלום). דלוק כברירת מחדל */
+    var showOnLockScreen: Boolean
+        get() = preferences.getBoolean(KEY_LOCK_SCREEN, true)
+        set(value) {
+            preferences.edit().putBoolean(KEY_LOCK_SCREEN, value).apply()
+        }
+
+    /** כבר ביקשנו את הרשאת ההתראות (כדי לדעת מתי חלון הבקשה כבר לא יוצג ופותחים את ההגדרות) */
+    var askedNotificationPermission: Boolean
+        get() = preferences.getBoolean(KEY_ASKED_NOTIF_PERM, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_ASKED_NOTIF_PERM, value).apply()
         }
 
     /** לרשום ביומן גם התראות עם סכום מאפליקציות שלא ברשימת המקורות (כדי שאפשר להוסיף אותן). כבוי כברירת מחדל */

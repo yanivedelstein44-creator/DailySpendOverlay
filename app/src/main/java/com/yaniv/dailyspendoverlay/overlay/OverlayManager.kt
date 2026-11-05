@@ -75,7 +75,8 @@ data class OverlayInfo(
 object OverlayManager {
 
     private const val TAG = "DailySpend"
-    private const val VISIBLE_MS = 4_000L
+    /** כמה זמן החלונית (וגם ההתראה במסך הנעילה) נשארות על המסך */
+    const val VISIBLE_MS = 4_000L
     private const val ANIM_MS = 220L
 
     private val main = Handler(Looper.getMainLooper())
@@ -226,26 +227,7 @@ object OverlayManager {
         }
 
         val extra = view.findViewById<TextView>(R.id.overlayExtra)
-        val extraLines = ArrayList<String>()
-        if (info.installments != null && info.perInstallment != null) {
-            extraLines += ctx.getString(
-                if (info.reversed) R.string.overlay_installments_excluded else R.string.overlay_installments,
-                info.installments,
-                Money.format(info.perInstallment)
-            )
-        }
-        if (info.notCounted) {
-            extraLines += ctx.getString(R.string.overlay_not_counted)
-        } else if (info.lastTxHomeMinor != null) {
-            val converted = Money.format(info.lastTxHomeMinor, info.homeCurrency)
-            extraLines += ctx.getString(
-                if (info.rateIsOnline) R.string.overlay_converted_online else R.string.overlay_converted_builtin,
-                converted
-            )
-        }
-        if (info.workText != null && !info.notCounted && !info.reversed) {
-            extraLines += ctx.getString(R.string.overlay_work_time, info.workText)
-        }
+        val extraLines = detailLines(ctx, info)
         extra.text = extraLines.joinToString("\n")
         extra.visibility = if (extraLines.isEmpty()) View.GONE else View.VISIBLE
 
@@ -264,7 +246,32 @@ object OverlayManager {
         if (status.isOver && info.justCrossed) pulse(card)
     }
 
-    // ---- עזרים משותפים גם למסך הראשי ----
+    // ---- עזרים משותפים גם למסך הראשי ולהתראה במסך הנעילה ----
+
+    /** שורות הפירוט מתחת לעסקה: תשלומים, המרת מטבע, זמן עבודה */
+    fun detailLines(ctx: Context, info: OverlayInfo): List<String> {
+        val lines = ArrayList<String>()
+        if (info.installments != null && info.perInstallment != null) {
+            lines += ctx.getString(
+                if (info.reversed) R.string.overlay_installments_excluded else R.string.overlay_installments,
+                info.installments,
+                Money.format(info.perInstallment)
+            )
+        }
+        if (info.notCounted) {
+            lines += ctx.getString(R.string.overlay_not_counted)
+        } else if (info.lastTxHomeMinor != null) {
+            val converted = Money.format(info.lastTxHomeMinor, info.homeCurrency)
+            lines += ctx.getString(
+                if (info.rateIsOnline) R.string.overlay_converted_online else R.string.overlay_converted_builtin,
+                converted
+            )
+        }
+        if (info.workText != null && !info.notCounted && !info.reversed) {
+            lines += ctx.getString(R.string.overlay_work_time, info.workText)
+        }
+        return lines
+    }
 
     /**
      * רקע הכרטיס: הצבע שבחר המשתמש (בבהירות שבחר) כל עוד לא חרגנו; אדום בולט עם מסגרת לבנה בחריגה.

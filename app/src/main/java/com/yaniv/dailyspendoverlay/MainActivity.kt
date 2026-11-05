@@ -1,10 +1,12 @@
 package com.yaniv.dailyspendoverlay
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -37,6 +39,7 @@ import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.net.FxUpdater
 import com.yaniv.dailyspendoverlay.net.OnlinePurpose
+import com.yaniv.dailyspendoverlay.overlay.LockScreenNotifier
 import com.yaniv.dailyspendoverlay.overlay.OverlayInfo
 import com.yaniv.dailyspendoverlay.overlay.OverlayManager
 import com.yaniv.dailyspendoverlay.update.OnlineUpdater
@@ -57,6 +60,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
 
     companion object {
         private const val REQ_PICK_APK = 41
+        private const val REQ_POST_NOTIFICATIONS = 42
         private const val AUTO_UPDATE_CHECK_INTERVAL_MS = 30L * 60 * 1000
     }
 
@@ -89,6 +93,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var swOverlayFull: Switch
     private lateinit var swOnUnlock: Switch
     private lateinit var swLogUnlisted: Switch
+    private lateinit var swLockScreen: Switch
+    private lateinit var tvLockStatus: TextView
+    private lateinit var btnLockGrant: Button
     private lateinit var etRules: EditText
     private lateinit var etWage: EditText
     private lateinit var tvWageSymbol: TextView
@@ -144,6 +151,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             checkForUpdate(manual = false)
         }
         maybeAskConsentOnce()
+        maybeAskNotificationPermission()
     }
 
     override fun onPause() {
@@ -231,6 +239,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull = findViewById(R.id.swOverlayFull)
         swOnUnlock = findViewById(R.id.swOnUnlock)
         swLogUnlisted = findViewById(R.id.swLogUnlisted)
+        swLockScreen = findViewById(R.id.swLockScreen)
+        tvLockStatus = findViewById(R.id.tvLockStatus)
+        btnLockGrant = findViewById(R.id.btnLockGrant)
         etRules = findViewById(R.id.etRules)
         etWage = findViewById(R.id.etWage)
         tvWageSymbol = findViewById(R.id.tvWageSymbol)
@@ -476,6 +487,13 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.overlayFull = checked
         }
+        swLockScreen.setOnCheckedChangeListener { _, checked ->
+            if (suppressSwitchCallbacks) return@setOnCheckedChangeListener
+            store.showOnLockScreen = checked
+            if (checked) maybeAskNotificationPermission() // מבקש פעם אחת; אחר כך הכפתור שמתחת
+            refreshLockScreen()
+        }
+        btnLockGrant.setOnClickListener { requestNotificationAccess() }
         swLogUnlisted.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.logUnlisted = checked
         }
@@ -503,8 +521,52 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull.isChecked = store.overlayFull
         swOnUnlock.isChecked = store.showOnUnlock
         swLogUnlisted.isChecked = store.logUnlisted
+        swLockScreen.isChecked = store.showOnLockScreen
         suppressSwitchCallbacks = false
+        refreshLockScreen()
         buildSwatches()
+    }
+
+    // ==================================================================
+    // התראה במסך הנעילה: הרשאת התראות (אנדרואיד 13+)
+    // ==================================================================
+
+    /** מציג הודעה + כפתור רק כשהמתג דלוק אבל האפליקציה לא מורשית לשלוח התראות */
+    private fun refreshLockScreen() {
+        val missing = store.showOnLockScreen && !LockScreenNotifier.canPost(this)
+        tvLockStatus.setTextColor(getColor(R.color.warn_red))
+        tvLockStatus.visibility = if (missing) View.VISIBLE else View.GONE
+        btnLockGrant.visibility = if (missing) View.VISIBLE else View.GONE
+    }
+
+    /** בקשה אוטומטית אחת בלבד (בפתיחת האפליקציה או כשמדליקים את המתג); אחר כך רק הכפתור */
+    private fun maybeAskNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (!store.showOnLockScreen || store.askedNotificationPermission || consentDialogOpen) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        store.askedNotificationPermission = true
+        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_POST_NOTIFICATIONS)
+    }
+
+    /** הכפתור: חלון הבקשה של המערכת, ואם הוא כבר לא יוצג (נדחה פעמיים) – הגדרות ההתראות של האפליקציה */
+    private fun requestNotificationAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            val dialogWontShow = store.askedNotificationPermission &&
+                !shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+            if (!dialogWontShow) {
+                store.askedNotificationPermission = true
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_POST_NOTIFICATIONS)
+                return
+            }
+        }
+        Permissions.openAppNotificationSettings(this)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_POST_NOTIFICATIONS) refreshLockScreen()
     }
 
     private fun buildSwatches() {

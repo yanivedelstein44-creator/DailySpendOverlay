@@ -45,6 +45,13 @@ object Permissions {
         tryStart(activity, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri(activity)))
     }
 
+    /** הגדרות ההתראות של האפליקציה (אם בקשת ההרשאה כבר נדחתה והחלון לא יוצג שוב) */
+    fun openAppNotificationSettings(activity: Activity) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+        if (!tryStart(activity, intent)) openAppDetails(activity)
+    }
+
     /** "התקנת אפליקציות לא ידועות" – נדרש כדי שהאפליקציה תוכל לעדכן את עצמה */
     fun openUnknownSources(activity: Activity) {
         tryStart(activity, Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, packageUri(activity)))

@@ -6,7 +6,8 @@
 1. **פרטיות:** נתוני הוצאות (סכומים, יומן, כללי מקורות) לעולם לא יוצאים מהמכשיר.
    - קוד רשת קיים רק ב-`net/OnlineGateway.kt`, והוא בודק הסכמה לכל מטרה (`OnlinePurpose`).
    - אין להוסיף מטרות רשת חדשות בלי שהמשתמש ביקש במפורש.
-2. **סוללה:** אין שירותי רקע, WakeLock, טיימרים או רענון מחזורי. כל עבודה מתבצעת רק בתגובה להתראה (`SpendNotificationListener`) או כשהמסך פתוח.
+2. **סוללה:** אין שירותי רקע, WakeLock, טיימרים או רענון מחזורי. כל עבודה מתבצעת רק בתגובה להתראה (`SpendNotificationListener`), לשחרור נעילה, או כשהמסך פתוח.
+   - ההתראה במסך הנעילה (`LockScreenNotifier`) נעלמת דרך `setTimeoutAfter` של המערכת, לא דרך טיימר באפליקציה.
 3. **חתימה:** תמיד `keystore/dailyspend.jks`, עם alias `dailyspend`.
    - אסור ליצור מפתח חדש, כי זה ישבור עדכונים למשתמשים קיימים.
    - `keystore/keystore.properties` לא נכנס ל-git.
@@ -26,5 +27,6 @@
 - `data/SpendStore` – SharedPreferences.
 - `listener/` – קליטת התראות.
 - `overlay/OverlayManager` – החלונית, 4 שניות, כחול/אדום.
+- `overlay/LockScreenNotifier` – התראה קצרה במסך הנעילה (רק כשהטלפון נעול), נעלמת אחרי אותן 4 שניות.
 - `update/` – עדכון עצמי דרך PackageInstaller (GitHub Releases או קובץ).
 - `MainActivity` – מסך ההגדרות.
