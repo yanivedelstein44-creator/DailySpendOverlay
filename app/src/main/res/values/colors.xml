@@ -2,6 +2,7 @@
 <resources>
     <!-- מסך ההגדרות -->
     <color name="app_bg">#0E1621</color>
+    <color name="lock_bubble_bg">#070D18</color>
     <color name="card_bg">#17222F</color>
     <color name="card_stroke">#243344</color>
     <color name="input_bg">#0F1823</color>

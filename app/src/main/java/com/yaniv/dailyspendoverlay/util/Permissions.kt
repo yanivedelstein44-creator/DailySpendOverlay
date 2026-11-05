@@ -52,6 +52,14 @@ object Permissions {
         if (!tryStart(activity, intent)) openAppDetails(activity)
     }
 
+    /** "התראות במסך מלא" (אנדרואיד 14+) – כדי שהבועה תופיע מעל מסך הנעילה */
+    fun openFullScreenIntentSettings(activity: Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            tryStart(activity, Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, packageUri(activity)))
+        ) return
+        openAppNotificationSettings(activity)
+    }
+
     /** "התקנת אפליקציות לא ידועות" – נדרש כדי שהאפליקציה תוכל לעדכן את עצמה */
     fun openUnknownSources(activity: Activity) {
         tryStart(activity, Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, packageUri(activity)))

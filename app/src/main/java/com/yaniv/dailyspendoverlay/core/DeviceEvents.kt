@@ -13,8 +13,19 @@ object DeviceEvents {
     /** מתחת לסף הזה לא מציינים איחור (עיכוב רגיל של המערכת) */
     const val LATE_THRESHOLD_SEC = 20L
 
+    /** אם הבועה הוצגה מעל מסך הנעילה ממש עכשיו, לא מציגים אותה שוב מיד בפתיחה */
+    const val RECENT_LOCK_BUBBLE_MS = 15_000L
+
     fun isPendingFresh(pendingAtMillis: Long, nowMillis: Long): Boolean =
         pendingAtMillis > 0 && (nowMillis - pendingAtMillis) in 0..PENDING_MAX_AGE_MS
+
+    /** להציג בפתיחת הנעילה את התשלום שנדחה? */
+    fun showPendingOnUnlock(pendingAtMillis: Long, lockBubbleShownAtMillis: Long, nowMillis: Long): Boolean {
+        if (!isPendingFresh(pendingAtMillis, nowMillis)) return false
+        val bubbleJustShown = lockBubbleShownAtMillis >= pendingAtMillis &&
+            (nowMillis - lockBubbleShownAtMillis) in 0 until RECENT_LOCK_BUBBLE_MS
+        return !bubbleJustShown
+    }
 
     /** "45 שניות" / "7 דקות" / "שעה" – או null אם ההתראה לא הגיעה באיחור משמעותי */
     fun lateText(lateMillis: Long): String? {

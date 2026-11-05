@@ -7,7 +7,7 @@
    - קוד רשת קיים רק ב-`net/OnlineGateway.kt`, והוא בודק הסכמה לכל מטרה (`OnlinePurpose`).
    - אין להוסיף מטרות רשת חדשות בלי שהמשתמש ביקש במפורש.
 2. **סוללה:** אין שירותי רקע, WakeLock, טיימרים או רענון מחזורי. כל עבודה מתבצעת רק בתגובה להתראה (`SpendNotificationListener`), לשחרור נעילה, או כשהמסך פתוח.
-   - ההתראה במסך הנעילה (`LockScreenNotifier`) נעלמת דרך `setTimeoutAfter` של המערכת, לא דרך טיימר באפליקציה.
+   - ההתראה במסך הנעילה (`LockScreenNotifier`) נעלמת דרך `setTimeoutAfter` של המערכת, לא דרך טיימר באפליקציה. הטיימר של 4 השניות בבועה שמעל הנעילה רץ רק כשהיא גלויה.
 3. **חתימה:** תמיד `keystore/dailyspend.jks`, עם alias `dailyspend`.
    - אסור ליצור מפתח חדש, כי זה ישבור עדכונים למשתמשים קיימים.
    - `keystore/keystore.properties` לא נכנס ל-git.
@@ -27,6 +27,7 @@
 - `data/SpendStore` – SharedPreferences.
 - `listener/` – קליטת התראות.
 - `overlay/OverlayManager` – החלונית, 4 שניות, כחול/אדום.
-- `overlay/LockScreenNotifier` – התראה קצרה כשהטלפון נעול או המסך כבוי, נעלמת אחרי אותן 4 שניות. החלונית עצמה מופיעה בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
+- `overlay/LockScreenNotifier` + `overlay/LockScreenBubbleActivity` – כשהטלפון נעול או המסך כבוי: "התראה במסך מלא" שמציגה את הבועה מעל מסך הנעילה ל-4 שניות (או התראה רגילה בלי אישור). החלונית מופיעה שוב בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
+- `core/ResetUndo` – גיבוי לפני "איפוס היום" ושחזור עד סוף היום.
 - `update/` – עדכון עצמי דרך PackageInstaller (GitHub Releases או קובץ).
 - `MainActivity` – מסך ההגדרות.

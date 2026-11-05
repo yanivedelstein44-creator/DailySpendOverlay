@@ -2,6 +2,7 @@ package com.yaniv.dailyspendoverlay.overlay
 
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
@@ -59,6 +60,8 @@ data class OverlayInfo(
     val isPreview: Boolean = false,
     /** "25 דקות" – כמה זמן עבודה העסקה שווה (רק אם הוגדר שכר שעתי) */
     val workText: String? = null,
+    /** הסכום היומי לפני העסקה – המספר "רץ" ממנו לסכום החדש, כמו כסף שנספר */
+    val previousTotalMinor: Long? = null,
 )
 
 /** מה קרה כשביקשו להציג חלונית */
@@ -90,6 +93,7 @@ object OverlayManager {
     /** כמה זמן החלונית (וגם ההתראה במסך הנעילה) נשארות על המסך */
     const val VISIBLE_MS = 4_000L
     private const val ANIM_MS = 220L
+    private const val COUNT_UP_MS = 900L
 
     private val main = Handler(Looper.getMainLooper())
     private var windowContext: Context? = null
@@ -213,11 +217,13 @@ object OverlayManager {
         }
     }
 
-    private fun bind(view: View, info: OverlayInfo) {
+    private fun bind(view: View, info: OverlayInfo) = bindCard(view, info, attachedFull)
+
+    /** ממלא את הכרטיס (layout/overlay_spend). משמש גם את הבועה שמעל מסך הנעילה */
+    fun bindCard(view: View, info: OverlayInfo, full: Boolean) {
         val ctx = view.context
         val status = BudgetStatus(info.totalMinor, info.budgetMinor)
         val card = view.findViewById<LinearLayout>(R.id.overlayCard)
-        val full = attachedFull
         card.background = cardBackground(ctx, status.isOver, cornerDp = if (full) 0f else 28f)
         card.layoutParams = card.layoutParams.apply {
             height = if (full) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
@@ -250,8 +256,8 @@ object OverlayManager {
         extra.visibility = if (extraLines.isEmpty()) View.GONE else View.VISIBLE
 
         val totalView = view.findViewById<TextView>(R.id.overlayTotal)
-        totalView.text = Money.format(info.totalMinor, info.homeCurrency)
-        totalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (full) 68f else 54f)
+        totalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (full) 76f else 56f)
+        countUp(totalView, info)
 
         val progress = view.findViewById<ProgressBar>(R.id.overlayProgress)
         applyProgress(ctx, progress, status)
@@ -261,7 +267,44 @@ object OverlayManager {
         budgetView.visibility = if (status.hasBudget) View.VISIBLE else View.GONE
         if (status.hasBudget) budgetView.text = budgetLine(ctx, status, info.homeCurrency)
 
-        if (status.isOver && info.justCrossed) pulse(card)
+        if (status.isOver && info.justCrossed) pulse(card) else popIn(card)
+    }
+
+    /**
+     * תופס את העין: הסכום היומי "רץ" מהסכום הקודם לסכום החדש (כמו שטרות שנספרים).
+     * האנימציה רצה רק כשהחלונית גלויה על המסך, ונעצרת לפני עדכון הבא.
+     */
+    private fun countUp(totalView: TextView, info: OverlayInfo) {
+        (totalView.tag as? ValueAnimator)?.cancel()
+        val target = info.totalMinor
+        val from = info.previousTotalMinor
+        totalView.text = Money.format(target, info.homeCurrency)
+        if (from == null || from < 0 || from >= target) return
+        totalView.text = Money.format(from, info.homeCurrency)
+        val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = COUNT_UP_MS
+            startDelay = ANIM_MS
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                val fraction = it.animatedValue as Float
+                val value = from + ((target - from) * fraction).toLong()
+                totalView.text = Money.format(value, info.homeCurrency)
+            }
+        }
+        totalView.tag = animator
+        animator.start()
+    }
+
+    /** "קפיצה" קטנה בכל הופעה */
+    private fun popIn(card: View) {
+        ObjectAnimator.ofPropertyValuesHolder(
+            card,
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 0.92f, 1.04f, 1f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.92f, 1.04f, 1f),
+        ).apply {
+            duration = 420
+            start()
+        }
     }
 
     // ---- עזרים משותפים גם למסך הראשי ולהתראה במסך הנעילה ----

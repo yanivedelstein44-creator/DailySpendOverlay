@@ -37,4 +37,20 @@ class DeviceEventsTest {
         assertEquals("שעה", DeviceEvents.lateText(61 * 60_000L))
         assertEquals("3 שעות", DeviceEvents.lateText(3 * 3_600_000L))
     }
+
+    @Test fun unlockRightAfterLockBubbleDoesNotRepeat() {
+        val paid = 1_000_000L
+        assertFalse(DeviceEvents.showPendingOnUnlock(paid, paid + 2_000, paid + 8_000))
+    }
+
+    @Test fun unlockLaterShowsAgain() {
+        val paid = 1_000_000L
+        assertTrue(DeviceEvents.showPendingOnUnlock(paid, paid + 2_000, paid + 120_000))
+    }
+
+    @Test fun unlockWithoutLockBubbleShows() {
+        val paid = 1_000_000L
+        assertTrue(DeviceEvents.showPendingOnUnlock(paid, 0, paid + 5_000))
+        assertTrue(DeviceEvents.showPendingOnUnlock(paid, paid - 60_000, paid + 5_000)) // בועה ישנה של תשלום קודם
+    }
 }

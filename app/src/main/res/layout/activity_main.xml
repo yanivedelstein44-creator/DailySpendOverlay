@@ -113,6 +113,15 @@
                 android:layout_marginTop="8dp"
                 android:text="@string/btn_reset_today"
                 android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnRestoreToday"
+                style="@style/DS.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="#FFFFFF"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- ===== מה האפליקציה עושה (מתחת לכרטיס של היום) ===== -->

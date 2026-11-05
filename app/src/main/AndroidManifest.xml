@@ -19,6 +19,9 @@
 
     <!-- 4. התראה קצרה עם הסכום היומי במסך הנעילה (אנדרואיד 13+: חלון אישור אחד) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 5. הבועה עצמה מעל מסך הנעילה: "התראה במסך מלא" (כמו שעון מעורר ושיחה נכנסת).
+         באנדרואיד 14+ המשתמש מאשר אותה בהגדרות. בלי אישור – רק התראה רגילה. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- גישה להתראות היא לא uses-permission: היא מוגדרת על השירות למטה
          (BIND_NOTIFICATION_LISTENER_SERVICE) והמשתמש מפעיל אותה ידנית בהגדרות. -->
@@ -58,6 +61,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- הבועה מעל מסך הנעילה: נפתחת רק ע"י ההתראה במסך מלא, נסגרת לבד אחרי 4 שניות.
+             לא מופיעה באפליקציות האחרונות ולא נשארת בהיסטוריה. -->
+        <activity
+            android:name=".overlay.LockScreenBubbleActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.DailySpend.LockBubble" />
 
         <!-- שירות קליטת ההתראות.
              המערכת מעירה אותו רק כשמגיעה התראה: אין ריצה ברקע, אין WakeLock, אין סריקה מחזורית. -->

@@ -21,6 +21,7 @@ import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.LedgerResult
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.overlay.OverlayInfo
+import com.yaniv.dailyspendoverlay.overlay.LockScreenBubbleActivity
 import com.yaniv.dailyspendoverlay.overlay.LockScreenNotifier
 import com.yaniv.dailyspendoverlay.overlay.OverlayManager
 import com.yaniv.dailyspendoverlay.overlay.ShowResult
@@ -76,7 +77,9 @@ class SpendNotificationListener : NotificationListenerService() {
                     val today = store.todaySnapshot()
                     val pendingAt = store.pendingUnlockMillis
                     if (pendingAt > 0L) store.pendingUnlockMillis = 0L
-                    val hasPending = DeviceEvents.isPendingFresh(pendingAt, System.currentTimeMillis())
+                    val hasPending = DeviceEvents.showPendingOnUnlock(
+                        pendingAt, LockScreenBubbleActivity.lastShownAt, System.currentTimeMillis(),
+                    )
                     if (today.totalMinor <= 0L) return // עוד לא הוצאת היום – אין מה להראות
 
                     val home = store.homeCurrency
@@ -92,6 +95,7 @@ class SpendNotificationListener : NotificationListenerService() {
                                 totalMinor = today.totalMinor, budgetMinor = store.budgetMinor,
                                 homeCurrency = home, justCrossed = false,
                                 workText = if (last != null) WorkTime.describe(today.lastTxHomeMinor, store.hourlyWageMinor) else null,
+                                previousTotalMinor = if (last != null) today.totalMinor - today.lastTxHomeMinor else null,
                             ),
                             ignoreLock = true,
                         )
@@ -237,6 +241,7 @@ class SpendNotificationListener : NotificationListenerService() {
                         homeCurrency = home,
                         justCrossed = budget > 0 && result.previousTotalMinor <= budget && total > budget,
                         workText = WorkTime.describe(conversion.homeMinor, store.hourlyWageMinor),
+                        previousTotalMinor = result.previousTotalMinor,
                     )
                 )
                 // ביומן רואים מה קרה עם החלונית (והאם ההתראה הגיעה לאפליקציה באיחור) – כדי לאבחן בלי ניחושים
@@ -270,6 +275,7 @@ class SpendNotificationListener : NotificationListenerService() {
                 } else {
                     if (!info.notCounted) store.pendingUnlockMillis = System.currentTimeMillis()
                     val lock = when (LockScreenNotifier.show(this, info)) {
+                        LockScreenNotifier.Result.BUBBLE -> getString(R.string.diag_lock_bubble)
                         LockScreenNotifier.Result.POSTED -> getString(R.string.diag_lock_ok)
                         LockScreenNotifier.Result.NO_PERMISSION -> getString(R.string.diag_lock_no_permission)
                         LockScreenNotifier.Result.FAILED -> getString(R.string.diag_lock_failed)

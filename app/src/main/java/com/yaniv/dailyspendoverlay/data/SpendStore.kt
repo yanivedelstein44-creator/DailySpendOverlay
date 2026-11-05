@@ -7,7 +7,6 @@ import android.telephony.TelephonyManager
 import com.yaniv.dailyspendoverlay.core.Amount
 import com.yaniv.dailyspendoverlay.core.Conversion
 import com.yaniv.dailyspendoverlay.core.Currencies
-import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.core.DailyLedger
 import com.yaniv.dailyspendoverlay.core.DetectionEntry
 import com.yaniv.dailyspendoverlay.core.DetectionLog
@@ -15,9 +14,12 @@ import com.yaniv.dailyspendoverlay.core.FxRates
 import com.yaniv.dailyspendoverlay.core.FxTable
 import com.yaniv.dailyspendoverlay.core.LedgerResult
 import com.yaniv.dailyspendoverlay.core.LedgerState
+import com.yaniv.dailyspendoverlay.core.ResetBackup
+import com.yaniv.dailyspendoverlay.core.ResetUndo
 import com.yaniv.dailyspendoverlay.core.SourceRules
 import com.yaniv.dailyspendoverlay.core.ThemeColor
 import com.yaniv.dailyspendoverlay.core.Themes
+import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.net.OnlinePurpose
 import java.time.LocalDate
 import java.util.Currency
@@ -60,6 +62,12 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_LOG_UNLISTED = "log_unlisted"
         private const val KEY_LOCK_SCREEN = "show_on_lock_screen"
         private const val KEY_PENDING_UNLOCK = "pending_unlock_millis"
+        private const val KEY_UNDO_DAY = "reset_undo_day"
+        private const val KEY_UNDO_TOTAL = "reset_undo_total"
+        private const val KEY_UNDO_COUNT = "reset_undo_count"
+        private const val KEY_UNDO_LAST_MINOR = "reset_undo_last_minor"
+        private const val KEY_UNDO_LAST_CURRENCY = "reset_undo_last_currency"
+        private const val KEY_UNDO_LAST_HOME = "reset_undo_last_home"
         private const val KEY_ASKED_NOTIF_PERM = "asked_notification_permission"
         private const val KEY_WAGE = "hourly_wage_minor"
         private const val KEY_WAGE_MONTHLY = "monthly_wage_minor"
@@ -201,9 +209,9 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             preferences.edit().putLong(KEY_WORK_HOURS, value.coerceIn(1L, 744L)).apply()
         }
 
-    /** גודל החלונית: false = כרטיס, true = מסך מלא */
+    /** גודל החלונית: false = כרטיס, true = מסך מלא (ברירת מחדל: כמה שיותר גדולה) */
     var overlayFull: Boolean
-        get() = preferences.getBoolean(KEY_OVERLAY_FULL, false)
+        get() = preferences.getBoolean(KEY_OVERLAY_FULL, true)
         set(value) {
             preferences.edit().putBoolean(KEY_OVERLAY_FULL, value).apply()
         }
@@ -260,9 +268,59 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
     /** מצב היום להצגה. אם התאריך התחלף ועוד לא היו עסקאות – מחזיר 0. */
     fun todaySnapshot(): LedgerState = DailyLedger.rollover(loadState(), today())
 
+    /** איפוס הסכום של היום. מה שאופס נשמר בצד, כדי שאפשר יהיה לשחזר עד סוף היום */
     @Synchronized
     fun resetToday() {
-        saveState(loadState().copy(day = today(), totalMinor = 0, count = 0, lastTx = null, lastTxHomeMinor = 0))
+        val day = today()
+        val state = DailyLedger.rollover(loadState(), day)
+        saveResetBackup(ResetUndo.backup(state, loadResetBackup(), day))
+        saveState(state.copy(totalMinor = 0, count = 0, lastTx = null, lastTxHomeMinor = 0))
+    }
+
+    /** מה אפשר לשחזר היום (null = אין) */
+    fun restorableToday(): ResetBackup? = loadResetBackup()?.takeIf { ResetUndo.canRestore(it, today()) }
+
+    /** מחזיר לסכום של היום את מה שאופס היום. false = אין מה לשחזר */
+    @Synchronized
+    fun restoreToday(): Boolean {
+        val day = today()
+        val restored = ResetUndo.restore(loadState(), loadResetBackup(), day) ?: return false
+        saveState(restored)
+        saveResetBackup(null)
+        return true
+    }
+
+    private fun loadResetBackup(): ResetBackup? {
+        val day = preferences.getString(KEY_UNDO_DAY, null) ?: return null
+        val lastCurrency = preferences.getString(KEY_UNDO_LAST_CURRENCY, null)
+        val lastMinor = preferences.getLong(KEY_UNDO_LAST_MINOR, 0L)
+        return ResetBackup(
+            day = day,
+            totalMinor = preferences.getLong(KEY_UNDO_TOTAL, 0L),
+            count = preferences.getInt(KEY_UNDO_COUNT, 0),
+            lastTx = if (lastCurrency != null && lastMinor > 0) Amount(lastMinor, lastCurrency) else null,
+            lastTxHomeMinor = preferences.getLong(KEY_UNDO_LAST_HOME, 0L),
+        )
+    }
+
+    private fun saveResetBackup(backup: ResetBackup?) {
+        val editor = preferences.edit()
+        if (backup == null) {
+            editor.remove(KEY_UNDO_DAY).remove(KEY_UNDO_TOTAL).remove(KEY_UNDO_COUNT)
+                .remove(KEY_UNDO_LAST_MINOR).remove(KEY_UNDO_LAST_CURRENCY).remove(KEY_UNDO_LAST_HOME)
+        } else {
+            editor.putString(KEY_UNDO_DAY, backup.day)
+                .putLong(KEY_UNDO_TOTAL, backup.totalMinor)
+                .putInt(KEY_UNDO_COUNT, backup.count)
+                .putLong(KEY_UNDO_LAST_HOME, backup.lastTxHomeMinor)
+            val last = backup.lastTx
+            if (last == null) {
+                editor.remove(KEY_UNDO_LAST_MINOR).remove(KEY_UNDO_LAST_CURRENCY)
+            } else {
+                editor.putLong(KEY_UNDO_LAST_MINOR, last.minor).putString(KEY_UNDO_LAST_CURRENCY, last.currency)
+            }
+        }
+        editor.apply()
     }
 
     // ------------------------------------------------------------------
@@ -314,6 +372,14 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             saveState(state.copy(totalMinor = newTotal, lastTxHomeMinor = newLastHome))
         } else {
             saveState(state.copy(totalMinor = 0, count = 0, lastTx = null, lastTxHomeMinor = 0))
+        }
+        // גם מה שאופס היום עובר למטבע החדש (בלי שער – אי אפשר לשחזר אותו)
+        loadResetBackup()?.let { backup ->
+            val total = convert(backup.totalMinor)
+            val lastHome = convert(backup.lastTxHomeMinor)
+            saveResetBackup(
+                if (total != null && lastHome != null) backup.copy(totalMinor = total, lastTxHomeMinor = lastHome) else null
+            )
         }
     }
 

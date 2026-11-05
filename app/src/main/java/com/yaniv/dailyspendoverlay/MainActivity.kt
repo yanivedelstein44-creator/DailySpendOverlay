@@ -277,6 +277,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
                 refreshToday()
             }
         }
+        findViewById<Button>(R.id.btnRestoreToday).setOnClickListener {
+            if (store.restoreToday()) toast(getString(R.string.restored_today))
+            refreshToday()
+        }
     }
 
     private fun refreshToday() {
@@ -298,6 +302,12 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             getString(R.string.today_no_budget)
         }
         cardToday.background = OverlayManager.cardBackground(this, status.isOver, cornerDp = 18f)
+
+        // "שחזר" מופיע רק אחרי איפוס, באותו יום, ומראה כמה יחזור
+        val restore = findViewById<Button>(R.id.btnRestoreToday)
+        val backup = store.restorableToday()
+        restore.visibility = if (backup != null) View.VISIBLE else View.GONE
+        if (backup != null) restore.text = getString(R.string.btn_restore_today, Money.format(backup.totalMinor, home))
     }
 
     /** תצוגה מקדימה של החלונית – לא נשמרת ולא משנה את הסכום */
@@ -324,6 +334,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
                 justCrossed = budget > 0 && total <= budget && newTotal > budget,
                 isPreview = true,
                 workText = WorkTime.describe(sampleMinor, store.hourlyWageMinor),
+                previousTotalMinor = total,
             )
         )
     }
@@ -493,7 +504,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             if (checked) maybeAskNotificationPermission() // מבקש פעם אחת; אחר כך הכפתור שמתחת
             refreshLockScreen()
         }
-        btnLockGrant.setOnClickListener { requestNotificationAccess() }
+        btnLockGrant.setOnClickListener {
+            if (!LockScreenNotifier.canPost(this)) requestNotificationAccess()
+            else Permissions.openFullScreenIntentSettings(this)
+        }
         swLogUnlisted.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.logUnlisted = checked
         }
@@ -531,12 +545,18 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     // התראה במסך הנעילה: הרשאת התראות (אנדרואיד 13+)
     // ==================================================================
 
-    /** מציג הודעה + כפתור רק כשהמתג דלוק אבל האפליקציה לא מורשית לשלוח התראות */
+    /** מציג הודעה + כפתור רק כשהמתג דלוק וחסר אישור: קודם התראות, אחר כך "מסך מלא" */
     private fun refreshLockScreen() {
-        val missing = store.showOnLockScreen && !LockScreenNotifier.canPost(this)
+        val message = when {
+            !store.showOnLockScreen -> null
+            !LockScreenNotifier.canPost(this) -> R.string.lock_perm_missing
+            !LockScreenNotifier.canUseFullScreen(this) -> R.string.lock_fsi_missing
+            else -> null
+        }
         tvLockStatus.setTextColor(getColor(R.color.warn_red))
-        tvLockStatus.visibility = if (missing) View.VISIBLE else View.GONE
-        btnLockGrant.visibility = if (missing) View.VISIBLE else View.GONE
+        if (message != null) tvLockStatus.setText(message)
+        tvLockStatus.visibility = if (message != null) View.VISIBLE else View.GONE
+        btnLockGrant.visibility = if (message != null) View.VISIBLE else View.GONE
     }
 
     /** בקשה אוטומטית אחת בלבד (בפתיחת האפליקציה או כשמדליקים את המתג); אחר כך רק הכפתור */

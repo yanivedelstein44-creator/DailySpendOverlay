@@ -13,20 +13,26 @@
     <string name="btn_preview_ok">תצוגה מקדימה</string>
     <string name="btn_preview_over">תצוגת חריגה</string>
     <string name="btn_reset_today">איפוס היום</string>
-    <string name="reset_confirm">לאפס את הסכום של היום ל-0?</string>
+    <string name="reset_confirm">לאפס את הסכום של היום ל-0?\nאפשר לשחזר עד סוף היום.</string>
+    <string name="btn_restore_today">↩ שחזר את ההוצאות של היום (%1$s)</string>
+    <string name="restored_today">ההוצאות של היום שוחזרו ✓</string>
     <string name="yes">כן</string>
     <string name="cancel">ביטול</string>
 
     <!-- חלונית צפה -->
     <string name="lock_switch">להציג גם כשהטלפון נעול</string>
-    <string name="lock_note">תשלום כשהטלפון נעול או המסך כבוי: תופיע התראה קצרה במסך הנעילה (נעלמת אחרי אותו זמן של החלונית), והחלונית עצמה תופיע ברגע שתפתח את הנעילה. ההתראה לא מדליקה את המסך. אם במסך הנעילה רואים רק אייקונים, בהגדרות מסך הנעילה של הטלפון בוחרים להציג את פרטי ההתראות.</string>
+    <string name="lock_note">תשלום כשהטלפון נעול: המסך נדלק והבועה מופיעה על מסך הנעילה בגודל מלא ל-4 שניות, כמו שעון מעורר. נגיעה סוגרת אותה. אם לא ראית אותה (למשל הטלפון היה בכיס), היא תופיע שוב כשתפתח את הנעילה.</string>
+    <string name="lock_fsi_missing">✗ כדי שהבועה תופיע על מסך הנעילה, אשר לאפליקציה \"התראות במסך מלא\". בלי זה תופיע רק התראה קטנה.</string>
+    <string name="lock_bubble_channel_name">בועה על מסך הנעילה</string>
+    <string name="lock_bubble_channel_desc">מדליקה את המסך ומציגה את הסכום היומי מעל מסך הנעילה אחרי תשלום, ל-4 שניות.</string>
     <string name="lock_perm_missing">✗ כדי שזה יעבוד צריך לאשר לאפליקציה לשלוח התראות</string>
     <string name="diag_overlay_ok">חלונית ✓</string>
     <string name="diag_overlay_deferred">נעול: חלונית בפתיחה</string>
     <string name="diag_overlay_locked_off">נעול: לא הוצג (המתג כבוי)</string>
     <string name="diag_overlay_no_permission">חלונית: אין הרשאה</string>
     <string name="diag_overlay_failed">חלונית: נכשלה</string>
-    <string name="diag_lock_ok">התראה ✓</string>
+    <string name="diag_lock_bubble">בועה בנעילה ✓</string>
+    <string name="diag_lock_ok">התראה ✓ (בלי מסך מלא)</string>
     <string name="diag_lock_no_permission">התראה: אין הרשאה</string>
     <string name="diag_lock_failed">התראה: נכשלה</string>
     <string name="diag_late">באיחור %1$s</string>
