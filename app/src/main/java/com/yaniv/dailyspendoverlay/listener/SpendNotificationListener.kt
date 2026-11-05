@@ -16,12 +16,14 @@ import com.yaniv.dailyspendoverlay.core.Amount
 import com.yaniv.dailyspendoverlay.core.AmountParser
 import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.core.DetectionEntry
+import com.yaniv.dailyspendoverlay.core.DeviceEvents
 import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.LedgerResult
 import com.yaniv.dailyspendoverlay.data.SpendStore
 import com.yaniv.dailyspendoverlay.overlay.OverlayInfo
 import com.yaniv.dailyspendoverlay.overlay.LockScreenNotifier
 import com.yaniv.dailyspendoverlay.overlay.OverlayManager
+import com.yaniv.dailyspendoverlay.overlay.ShowResult
 
 /**
  * קליטת נתונים פסיבית: המערכת קוראת ל-onNotificationPosted רק כשמגיעה התראה חדשה.
@@ -71,17 +73,39 @@ class SpendNotificationListener : NotificationListenerService() {
             override fun onReceive(context: Context, intent: Intent) {
                 try {
                     val store = SpendStore.get(context)
-                    if (!store.showOnUnlock) return
                     val today = store.todaySnapshot()
+                    val pendingAt = store.pendingUnlockMillis
+                    if (pendingAt > 0L) store.pendingUnlockMillis = 0L
+                    val hasPending = DeviceEvents.isPendingFresh(pendingAt, System.currentTimeMillis())
                     if (today.totalMinor <= 0L) return // עוד לא הוצאת היום – אין מה להראות
-                    OverlayManager.show(
-                        context,
-                        OverlayInfo(
-                            lastTx = null, lastTxHomeMinor = null,
-                            totalMinor = today.totalMinor, budgetMinor = store.budgetMinor,
-                            homeCurrency = store.homeCurrency, justCrossed = false,
+
+                    val home = store.homeCurrency
+                    if (hasPending) {
+                        // תשלום שזוהה כשהטלפון היה נעול: החלונית שלו מופיעה עכשיו, ברגע שפותחים את הנעילה
+                        LockScreenNotifier.cancel(context)
+                        val last = today.lastTx
+                        OverlayManager.show(
+                            context,
+                            OverlayInfo(
+                                lastTx = last,
+                                lastTxHomeMinor = if (last != null && last.currency != home) today.lastTxHomeMinor else null,
+                                totalMinor = today.totalMinor, budgetMinor = store.budgetMinor,
+                                homeCurrency = home, justCrossed = false,
+                                workText = if (last != null) WorkTime.describe(today.lastTxHomeMinor, store.hourlyWageMinor) else null,
+                            ),
+                            ignoreLock = true,
                         )
-                    )
+                    } else if (store.showOnUnlock) {
+                        OverlayManager.show(
+                            context,
+                            OverlayInfo(
+                                lastTx = null, lastTxHomeMinor = null,
+                                totalMinor = today.totalMinor, budgetMinor = store.budgetMinor,
+                                homeCurrency = home, justCrossed = false,
+                            ),
+                            ignoreLock = true,
+                        )
+                    }
                 } catch (t: Throwable) {
                     Log.w(TAG, "Failed to show unlock summary", t)
                 }
@@ -124,6 +148,7 @@ class SpendNotificationListener : NotificationListenerService() {
         if ((notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
 
         val store = SpendStore.get(this)
+        val lateText = DeviceEvents.lateText(System.currentTimeMillis() - sbn.postTime)
         val content = NotificationText.extract(notification)
         val listed = store.rules().matches(pkg, content.title)
         if (!listed && pkg in PRIVATE_APPS) return
@@ -199,9 +224,8 @@ class SpendNotificationListener : NotificationListenerService() {
 
         when (val result = store.registerTransaction(amount, conversion.homeMinor, fingerprint)) {
             is LedgerResult.Counted -> {
-                log(DetectionStatus.COUNTED, parsed.installments?.let { "$it תשלומים" } ?: "")
                 val total = result.state.totalMinor
-                announce(
+                val shown = announce(
                     OverlayInfo(
                         lastTx = amount,
                         lastTxHomeMinor = if (amount.currency != home) conversion.homeMinor else null,
@@ -215,16 +239,46 @@ class SpendNotificationListener : NotificationListenerService() {
                         workText = WorkTime.describe(conversion.homeMinor, store.hourlyWageMinor),
                     )
                 )
+                // ביומן רואים מה קרה עם החלונית (והאם ההתראה הגיעה לאפליקציה באיחור) – כדי לאבחן בלי ניחושים
+                val detail = listOfNotNull(
+                    parsed.installments?.let { "$it תשלומים" },
+                    shown,
+                    lateText?.let { getString(R.string.diag_late, it) },
+                ).joinToString(" · ")
+                log(DetectionStatus.COUNTED, detail)
             }
             is LedgerResult.Duplicate -> log(DetectionStatus.DUPLICATE, result.reason)
             is LedgerResult.Excluded, is LedgerResult.Reversed -> Unit // לא קורה ב-register
         }
     }
 
-    /** תשלום זוהה: חלונית צפה (כשהטלפון פתוח) + התראה קצרה (כשהטלפון נעול) */
-    private fun announce(info: OverlayInfo) {
-        OverlayManager.show(this, info)
-        LockScreenNotifier.show(this, info)
+    /**
+     * תשלום זוהה.
+     *  • טלפון פתוח → חלונית צפה.
+     *  • טלפון נעול / מסך כבוי → התראה קצרה במסך הנעילה, והחלונית תופיע כשפותחים את הנעילה.
+     * מחזיר טקסט קצר לאבחון ביומן.
+     */
+    private fun announce(info: OverlayInfo): String {
+        val store = SpendStore.get(this)
+        return when (OverlayManager.show(this, info)) {
+            ShowResult.SHOWN -> getString(R.string.diag_overlay_ok)
+            ShowResult.NO_PERMISSION -> getString(R.string.diag_overlay_no_permission)
+            ShowResult.FAILED -> getString(R.string.diag_overlay_failed)
+            ShowResult.DEFERRED -> {
+                if (!store.showOnLockScreen) {
+                    getString(R.string.diag_overlay_locked_off)
+                } else {
+                    if (!info.notCounted) store.pendingUnlockMillis = System.currentTimeMillis()
+                    val lock = when (LockScreenNotifier.show(this, info)) {
+                        LockScreenNotifier.Result.POSTED -> getString(R.string.diag_lock_ok)
+                        LockScreenNotifier.Result.NO_PERMISSION -> getString(R.string.diag_lock_no_permission)
+                        LockScreenNotifier.Result.FAILED -> getString(R.string.diag_lock_failed)
+                        LockScreenNotifier.Result.SKIPPED -> null
+                    }
+                    listOfNotNull(getString(R.string.diag_overlay_deferred), lock).joinToString(" · ")
+                }
+            }
+        }
     }
 
     /** שם האפליקציה ששלחה את ההתראה (ליומן בלבד) */

@@ -1,0 +1,29 @@
+package com.yaniv.dailyspendoverlay.core
+
+/**
+ * לוגיקה טהורה (בלי תלות באנדרואיד) לשני מצבים מיוחדים של תשלום:
+ *  • תשלום שזוהה כשהטלפון נעול – החלונית נדחית עד שחרור הנעילה.
+ *  • התראה שהגיעה לאפליקציה באיחור – אבחון בלבד, מוצג ביומן.
+ */
+object DeviceEvents {
+
+    /** תשלום שנדחה לפתיחת הנעילה מוצג רק אם הנעילה נפתחה תוך שעה; אחרת הוא כבר לא רלוונטי */
+    const val PENDING_MAX_AGE_MS = 60L * 60 * 1000
+
+    /** מתחת לסף הזה לא מציינים איחור (עיכוב רגיל של המערכת) */
+    const val LATE_THRESHOLD_SEC = 20L
+
+    fun isPendingFresh(pendingAtMillis: Long, nowMillis: Long): Boolean =
+        pendingAtMillis > 0 && (nowMillis - pendingAtMillis) in 0..PENDING_MAX_AGE_MS
+
+    /** "45 שניות" / "7 דקות" / "שעה" – או null אם ההתראה לא הגיעה באיחור משמעותי */
+    fun lateText(lateMillis: Long): String? {
+        val seconds = lateMillis / 1000
+        if (seconds < LATE_THRESHOLD_SEC) return null
+        if (seconds < 120) return "$seconds שניות"
+        val minutes = (seconds + 30) / 60
+        if (minutes < 60) return "$minutes דקות"
+        val hours = minutes / 60
+        return if (hours == 1L) "שעה" else "$hours שעות"
+    }
+}

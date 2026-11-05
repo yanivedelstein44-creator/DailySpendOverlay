@@ -1,6 +1,5 @@
 package com.yaniv.dailyspendoverlay.overlay
 
-import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -21,7 +20,8 @@ import com.yaniv.dailyspendoverlay.data.SpendStore
  * לכן, כשתשלום מזוהה והטלפון נעול, מפרסמים התראה אחת (תמיד באותו מזהה, כך שהיא מתעדכנת במקום)
  * עם הסכום היומי והעסקה האחרונה.
  *
- *  • נשלחת רק בתגובה לתשלום שזוהה, ורק כשהטלפון נעול. כשהוא פתוח – החלונית הצפה מטפלת.
+ *  • נשלחת רק בתגובה לתשלום שזוהה, ורק כשהטלפון נעול או המסך כבוי. כשהוא פתוח – החלונית הצפה מטפלת.
+ *  • בנוסף, כשפותחים את הנעילה מופיעה החלונית הצפה עצמה עם אותו תשלום (ראה SpendNotificationListener).
  *  • נעלמת לבד אחרי אותו זמן של החלונית (VISIBLE_MS): ההסרה נעשית ע"י המערכת (setTimeoutAfter),
  *    לא ע"י טיימר באפליקציה, ולכן אין שום עבודה ברקע.
  *  • שקטה (בלי צליל ורטט), מקומית בלבד (לא עוברת לשעון חכם) ולא מדליקה את המסך.
@@ -39,20 +39,34 @@ object LockScreenNotifier {
         return manager.areNotificationsEnabled()
     }
 
-    fun show(context: Context, info: OverlayInfo) {
-        try {
+    enum class Result { POSTED, NO_PERMISSION, FAILED, SKIPPED }
+
+    /**
+     * מפרסם את ההתראה. מי שקורא אחראי לקרוא רק כשהחלונית הצפה לא יכולה להיראות (טלפון נעול / מסך כבוי).
+     */
+    fun show(context: Context, info: OverlayInfo): Result {
+        return try {
             val app = context.applicationContext
-            if (info.isPreview || info.lastTx == null) return
-            if (!SpendStore.get(app).showOnLockScreen) return
-            val keyguard = app.getSystemService(KeyguardManager::class.java) ?: return
-            if (!keyguard.isKeyguardLocked) return // הטלפון פתוח – החלונית הצפה מטפלת בזה
-            val manager = app.getSystemService(NotificationManager::class.java) ?: return
-            if (!manager.areNotificationsEnabled()) return
+            if (info.isPreview || info.lastTx == null) return Result.SKIPPED
+            if (!SpendStore.get(app).showOnLockScreen) return Result.SKIPPED
+            val manager = app.getSystemService(NotificationManager::class.java) ?: return Result.FAILED
+            if (!manager.areNotificationsEnabled()) return Result.NO_PERMISSION
             manager.createNotificationChannel(buildChannel(app))
             manager.notify(NOTIFICATION_ID, buildNotification(app, info))
+            Result.POSTED
         } catch (t: Throwable) {
             // לעולם לא להפיל את השירות בגלל התראה
             Log.w(TAG, "Lock screen notification failed", t)
+            Result.FAILED
+        }
+    }
+
+    /** ברגע שחרור הנעילה מופיעה החלונית עצמה, אז ההתראה כבר מיותרת */
+    fun cancel(context: Context) {
+        try {
+            context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to cancel lock screen notification", t)
         }
     }
 

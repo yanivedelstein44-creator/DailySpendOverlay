@@ -27,6 +27,6 @@
 - `data/SpendStore` – SharedPreferences.
 - `listener/` – קליטת התראות.
 - `overlay/OverlayManager` – החלונית, 4 שניות, כחול/אדום.
-- `overlay/LockScreenNotifier` – התראה קצרה במסך הנעילה (רק כשהטלפון נעול), נעלמת אחרי אותן 4 שניות.
+- `overlay/LockScreenNotifier` – התראה קצרה כשהטלפון נעול או המסך כבוי, נעלמת אחרי אותן 4 שניות. החלונית עצמה מופיעה בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
 - `update/` – עדכון עצמי דרך PackageInstaller (GitHub Releases או קובץ).
 - `MainActivity` – מסך ההגדרות.

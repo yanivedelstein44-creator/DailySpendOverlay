@@ -59,6 +59,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_ON_UNLOCK = "show_on_unlock"
         private const val KEY_LOG_UNLISTED = "log_unlisted"
         private const val KEY_LOCK_SCREEN = "show_on_lock_screen"
+        private const val KEY_PENDING_UNLOCK = "pending_unlock_millis"
         private const val KEY_ASKED_NOTIF_PERM = "asked_notification_permission"
         private const val KEY_WAGE = "hourly_wage_minor"
         private const val KEY_WAGE_MONTHLY = "monthly_wage_minor"
@@ -219,6 +220,13 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_LOCK_SCREEN, true)
         set(value) {
             preferences.edit().putBoolean(KEY_LOCK_SCREEN, value).apply()
+        }
+
+    /** מתי זוהה תשלום שהחלונית שלו נדחתה כי הטלפון היה נעול (0 = אין). מוצג כשפותחים את הנעילה */
+    var pendingUnlockMillis: Long
+        get() = preferences.getLong(KEY_PENDING_UNLOCK, 0L)
+        set(value) {
+            preferences.edit().putLong(KEY_PENDING_UNLOCK, value.coerceAtLeast(0L)).apply()
         }
 
     /** כבר ביקשנו את הרשאת ההתראות (כדי לדעת מתי חלון הבקשה כבר לא יוצג ופותחים את ההגדרות) */

@@ -61,6 +61,18 @@ data class OverlayInfo(
     val workText: String? = null,
 )
 
+/** מה קרה כשביקשו להציג חלונית */
+enum class ShowResult {
+    /** החלונית הוצגה */
+    SHOWN,
+    /** הטלפון נעול או המסך כבוי – לא מציגים עכשיו (אחרת היא "תקועה" עד הפתיחה) */
+    DEFERRED,
+    /** אין הרשאת "הצגה מעל אפליקציות אחרות" */
+    NO_PERMISSION,
+    /** המערכת סירבה להוסיף את החלון */
+    FAILED,
+}
+
 /**
  * החלונית הצפה.
  *  • מוצגת מעל כל האפליקציות (TYPE_APPLICATION_OVERLAY, דורש SYSTEM_ALERT_WINDOW).
@@ -86,15 +98,19 @@ object OverlayManager {
     private var attachedFull = false
     private val hideRunnable = Runnable { hide() }
 
-    fun show(context: Context, info: OverlayInfo) {
+    /**
+     * @param ignoreLock true רק ברגע שחרור הנעילה (ה-Broadcast מגיע לפעמים רגע לפני שהמערכת מעדכנת את מצב הנעילה)
+     */
+    fun show(context: Context, info: OverlayInfo, ignoreLock: Boolean = false): ShowResult {
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            main.post { show(context, info) }
-            return
+            main.post { show(context, info, ignoreLock) }
+            return ShowResult.SHOWN
         }
         val app = context.applicationContext
+        if (!ignoreLock && !ScreenState.canShowOverlay(app)) return ShowResult.DEFERRED
         if (!Settings.canDrawOverlays(app)) {
             showFallbackToast(app, info)
-            return
+            return ShowResult.NO_PERMISSION
         }
         try {
             val full = SpendStore.get(app).overlayFull
@@ -116,12 +132,14 @@ object OverlayManager {
             bind(view, info)
             main.removeCallbacks(hideRunnable)
             main.postDelayed(hideRunnable, VISIBLE_MS)
+            return ShowResult.SHOWN
         } catch (e: RuntimeException) {
             // BadTokenException / SecurityException – למשל אם ההרשאה בוטלה בזמן ריצה
             Log.w(TAG, "Overlay failed", e)
             root = null
             windowContext = null
             showFallbackToast(app, info)
+            return ShowResult.FAILED
         }
     }
 

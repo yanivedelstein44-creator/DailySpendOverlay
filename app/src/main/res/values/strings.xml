@@ -18,9 +18,18 @@
     <string name="cancel">ביטול</string>
 
     <!-- חלונית צפה -->
-    <string name="lock_switch">להציג גם במסך הנעילה (התראה קצרה)</string>
-    <string name="lock_note">אחרי תשלום, כשהטלפון נעול, תופיע התראה עם הסכום היומי והיא תיעלם אחרי אותו זמן של החלונית. כשהטלפון פתוח מופיעה החלונית הרגילה. ההתראה לא מדליקה את המסך. אם במסך הנעילה רואים רק אייקונים, בהגדרות מסך הנעילה של הטלפון בוחרים להציג את פרטי ההתראות.</string>
+    <string name="lock_switch">להציג גם כשהטלפון נעול</string>
+    <string name="lock_note">תשלום כשהטלפון נעול או המסך כבוי: תופיע התראה קצרה במסך הנעילה (נעלמת אחרי אותו זמן של החלונית), והחלונית עצמה תופיע ברגע שתפתח את הנעילה. ההתראה לא מדליקה את המסך. אם במסך הנעילה רואים רק אייקונים, בהגדרות מסך הנעילה של הטלפון בוחרים להציג את פרטי ההתראות.</string>
     <string name="lock_perm_missing">✗ כדי שזה יעבוד צריך לאשר לאפליקציה לשלוח התראות</string>
+    <string name="diag_overlay_ok">חלונית ✓</string>
+    <string name="diag_overlay_deferred">נעול: חלונית בפתיחה</string>
+    <string name="diag_overlay_locked_off">נעול: לא הוצג (המתג כבוי)</string>
+    <string name="diag_overlay_no_permission">חלונית: אין הרשאה</string>
+    <string name="diag_overlay_failed">חלונית: נכשלה</string>
+    <string name="diag_lock_ok">התראה ✓</string>
+    <string name="diag_lock_no_permission">התראה: אין הרשאה</string>
+    <string name="diag_lock_failed">התראה: נכשלה</string>
+    <string name="diag_late">באיחור %1$s</string>
     <string name="lock_title">היום: %1$s</string>
     <string name="lock_title_over">⚠ היום: %1$s</string>
     <string name="lock_channel_name">סכום יומי במסך הנעילה</string>
