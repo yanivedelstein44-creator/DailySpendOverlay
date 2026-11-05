@@ -117,6 +117,22 @@ tap_text "איפוס היום"; sleep 1.5; shot 12-reset-confirm
 tap_text "כן"; sleep 1.5; shot 13-after-reset; ui_texts 13-after-reset
 tap_text "שחזר"; sleep 1.5; shot 14-after-restore; ui_texts 14-after-restore
 
+step "7. real lock screen with a PIN (like a real phone): payment while locked -> bubble over the lock screen"
+adb shell locksettings set-pin 1111 >> "$LOG" 2>&1
+adb shell input keyevent KEYCODE_SLEEP; sleep 6; state pin-locked-before-pay
+pay p4 22.50 "Aroma"
+sleep 2; shot 15-pin-locked-bubble-2s; state pin-locked-after-pay
+sleep 5; shot 16-pin-lockscreen-after-7s; state pin-locked-after-7s
+sleep 15
+
+step "8. unlock with the PIN later -> the bubble shows again"
+adb shell input keyevent KEYCODE_WAKEUP; sleep 0.7
+adb shell wm dismiss-keyguard; sleep 1.2
+adb shell input text 1111; adb shell input keyevent 66
+sleep 1.5; shot 17-after-pin-unlock; state after-pin-unlock
+sleep 5
+adb shell locksettings clear --old 1111 >> "$LOG" 2>&1
+
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1
 adb logcat -d > "$OUT/logcat-full.txt" 2>&1
