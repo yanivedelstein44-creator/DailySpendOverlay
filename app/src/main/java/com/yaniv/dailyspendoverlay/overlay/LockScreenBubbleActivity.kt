@@ -22,7 +22,7 @@ import kotlin.math.min
  *
  * חלונית צפה לא יכולה להופיע מעל מסך הנעילה. לכן, כשתשלום מזוהה והטלפון נעול, LockScreenNotifier
  * שולח "התראה במסך מלא" – והמערכת עצמה פותחת את המסך הזה מעל הנעילה (כמו שעון מעורר).
- * הוא מדליק את המסך, מציג את אותו כרטיס כמו החלונית, ונסגר לבד אחרי אותן 4 שניות (או בנגיעה).
+ * הוא מדליק את המסך, מציג את אותו כרטיס כמו החלונית (או מסך מלא, לפי אותו מתג), ונסגר לבד אחרי אותן 4 שניות (או בנגיעה).
  * הטיימר רץ רק כשהמסך הזה פתוח וגלוי. אין כאן כפתורים או דרך להיכנס לאפליקציה בלי לפתוח את הנעילה.
  */
 class LockScreenBubbleActivity : Activity() {
@@ -84,7 +84,7 @@ class LockScreenBubbleActivity : Activity() {
         val info = LockScreenNotifier.takeBubbleInfo() ?: infoFromStore(store) ?: return false
         LockScreenNotifier.cancel(this) // ההתראה עצמה כבר מיותרת – הבועה מוצגת
 
-        val full = true // מעל מסך הנעילה הבועה תמיד בגודל מלא – כמה שיותר גדולה
+        val full = store.overlayFull // כמו החלונית: כרטיס, ומסך מלא רק אם המתג דלוק
         val root = FrameLayout(this)
         root.setOnClickListener { dismissSeen(store) }
         val themed = ContextThemeWrapper(this, R.style.Theme_DailySpend_Overlay)

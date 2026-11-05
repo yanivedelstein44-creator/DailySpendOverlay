@@ -209,9 +209,9 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
             preferences.edit().putLong(KEY_WORK_HOURS, value.coerceIn(1L, 744L)).apply()
         }
 
-    /** גודל החלונית: false = כרטיס, true = מסך מלא (ברירת מחדל: כמה שיותר גדולה) */
+    /** גודל החלונית: false = כרטיס (ברירת מחדל), true = מסך מלא – רק אם המשתמש הדליק את המתג */
     var overlayFull: Boolean
-        get() = preferences.getBoolean(KEY_OVERLAY_FULL, true)
+        get() = preferences.getBoolean(KEY_OVERLAY_FULL, false)
         set(value) {
             preferences.edit().putBoolean(KEY_OVERLAY_FULL, value).apply()
         }
