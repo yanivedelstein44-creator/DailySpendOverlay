@@ -129,7 +129,8 @@ step "8. unlock with the PIN later -> the bubble shows again"
 adb shell input keyevent KEYCODE_WAKEUP; sleep 0.7
 adb shell wm dismiss-keyguard; sleep 1.2
 adb shell input text 1111; adb shell input keyevent 66
-sleep 1.5; shot 17-after-pin-unlock; state after-pin-unlock
+sleep 2.5; shot 17-after-pin-unlock; state after-pin-unlock
+adb logcat -d -s DailySpend:I >> "$LOG" 2>&1
 sleep 5
 adb shell locksettings clear --old 1111 >> "$LOG" 2>&1
 

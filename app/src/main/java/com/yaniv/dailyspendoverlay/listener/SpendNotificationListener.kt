@@ -80,6 +80,7 @@ class SpendNotificationListener : NotificationListenerService() {
                     val hasPending = DeviceEvents.showPendingOnUnlock(
                         pendingAt, LockScreenBubbleActivity.lastShownAt, System.currentTimeMillis(),
                     )
+                    Log.i(TAG, "unlock: pending=${pendingAt > 0L} show=$hasPending")
                     if (today.totalMinor <= 0L) return // עוד לא הוצאת היום – אין מה להראות
 
                     val home = store.homeCurrency
@@ -117,7 +118,9 @@ class SpendNotificationListener : NotificationListenerService() {
         }
         val filter = IntentFilter(Intent.ACTION_USER_PRESENT)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            // EXPORTED בכוונה: את USER_PRESENT שולח ממשק המערכת (SystemUI), לא "המערכת" עצמה,
+            // ו-NOT_EXPORTED חוסם אותו (נמצא בבדיקת האמולטור). זה Broadcast מוגן – אפליקציה אחרת לא יכולה לזייף אותו.
+            registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(receiver, filter)
