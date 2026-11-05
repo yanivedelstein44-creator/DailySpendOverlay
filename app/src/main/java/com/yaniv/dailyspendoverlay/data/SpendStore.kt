@@ -56,6 +56,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_THEME = "theme_color"
         private const val KEY_BRIGHTNESS = "theme_brightness"
         private const val KEY_OVERLAY_FULL = "overlay_full"
+        private const val KEY_ON_UNLOCK = "show_on_unlock"
         private const val KEY_WAGE = "hourly_wage_minor"
         private const val KEY_WAGE_MONTHLY = "monthly_wage_minor"
         private const val KEY_WORK_HOURS = "work_hours_month"
@@ -141,7 +142,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
     }
 
     /**
-     * רושם עסקה: מאפס אם התחלף היום, מסנן כפילויות (60 שניות), מוסיף לסכום ושומר.
+     * רושם עסקה: מאפס אם התחלף היום, מסנן כפילויות (10 דקות), מוסיף לסכום ושומר.
      * @param homeMinor הסכום אחרי המרה למטבע הראשי
      */
     @Synchronized
@@ -201,6 +202,13 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_OVERLAY_FULL, false)
         set(value) {
             preferences.edit().putBoolean(KEY_OVERLAY_FULL, value).apply()
+        }
+
+    /** להציג את הסכום היומי גם כשפותחים את הטלפון (אחרי שחרור הנעילה). כבוי כברירת מחדל */
+    var showOnUnlock: Boolean
+        get() = preferences.getBoolean(KEY_ON_UNLOCK, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_ON_UNLOCK, value).apply()
         }
 
     /** בהירות החלונית באחוזים (0–100, ברירת מחדל 50) */

@@ -38,7 +38,8 @@ import kotlin.math.min
 /** מה מציגים בחלונית */
 data class OverlayInfo(
     /** העסקה האחרונה במטבע המקורי ($12.50 / 45.90 ₪) */
-    val lastTx: Amount,
+    /** null = חלונית "סיכום בפתיחת הטלפון": רק הסכום היומי, בלי עסקה אחרונה */
+    val lastTx: Amount?,
     /** אותה עסקה במטבע הראשי – רק אם היא במטבע זר (אחרת null) */
     val lastTxHomeMinor: Long?,
     /** true אם ההמרה לפי שער מהרשת, false אם לפי שער משוער מובנה */
@@ -208,6 +209,7 @@ object OverlayManager {
 
         view.findViewById<TextView>(R.id.overlayHeader).text = ctx.getString(
             when {
+                info.lastTx == null && !status.isOver -> R.string.overlay_header_unlock
                 info.reversed -> R.string.overlay_header_reversed
                 status.isOver && info.justCrossed -> R.string.overlay_header_crossed
                 status.isOver -> R.string.overlay_header_over
@@ -215,8 +217,13 @@ object OverlayManager {
                 else -> R.string.overlay_header_ok
             }
         )
-        view.findViewById<TextView>(R.id.overlayLastAmount).text =
-            ctx.getString(R.string.overlay_last_tx, Money.format(info.lastTx))
+        val lastView = view.findViewById<TextView>(R.id.overlayLastAmount)
+        if (info.lastTx != null) {
+            lastView.text = ctx.getString(R.string.overlay_last_tx, Money.format(info.lastTx))
+            lastView.visibility = View.VISIBLE
+        } else {
+            lastView.visibility = View.GONE
+        }
 
         val extra = view.findViewById<TextView>(R.id.overlayExtra)
         val extraLines = ArrayList<String>()
@@ -341,6 +348,7 @@ object OverlayManager {
 
     /** אם אין הרשאת חלונית – לפחות הודעה קצרה (Toast) */
     private fun showFallbackToast(ctx: Context, info: OverlayInfo) {
+        if (info.lastTx == null) return // סיכום בפתיחת הטלפון: בלי הרשאה לא מציגים כלום
         val text = ctx.getString(
             R.string.toast_fallback,
             Money.format(info.totalMinor, info.homeCurrency),

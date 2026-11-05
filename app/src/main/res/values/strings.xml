@@ -18,6 +18,9 @@
     <string name="cancel">ביטול</string>
 
     <!-- חלונית צפה -->
+    <string name="overlay_header_unlock">סיכום ההוצאות להיום</string>
+    <string name="unlock_switch">להציג את הסכום גם כשפותחים את הטלפון</string>
+    <string name="unlock_note">אחרי שחרור הנעילה תופיע החלונית עם הסכום היומי (רק אם כבר הוצאת היום). כבוי כברירת מחדל. בלי טיימרים ובלי שירות רקע – רק תגובה לפתיחת המסך.</string>
     <string name="overlay_header_ok">✓ תשלום זוהה</string>
     <string name="overlay_header_over">⚠ מעל התקציב היומי</string>
     <string name="overlay_header_crossed">⚠ עברת עכשיו את התקציב היומי!</string>

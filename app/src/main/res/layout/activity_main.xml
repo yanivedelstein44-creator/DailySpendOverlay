@@ -411,9 +411,24 @@
                 android:textColor="@color/text_primary"
                 android:textSize="15sp" />
 
+            <Switch
+                android:id="@+id/swOnUnlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:minHeight="44dp"
+                android:text="@string/unlock_switch"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
             <TextView
                 style="@style/DS.Body"
-                android:layout_marginTop="4dp"
+                android:text="@string/unlock_note"
+                android:textSize="13sp" />
+
+            <TextView
+                style="@style/DS.Body"
+                android:layout_marginTop="8dp"
                 android:text="@string/appearance_note"
                 android:textSize="13sp" />
         </LinearLayout>

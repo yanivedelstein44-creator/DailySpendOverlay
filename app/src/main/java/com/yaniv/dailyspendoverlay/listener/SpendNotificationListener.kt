@@ -1,6 +1,10 @@
 package com.yaniv.dailyspendoverlay.listener
 
 import android.app.Notification
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -37,6 +41,68 @@ class SpendNotificationListener : NotificationListenerService() {
             "com.google.android.gm", "com.microsoft.office.outlook", "com.discord", "com.snapchat.android",
             "com.google.android.apps.dynamite", "com.slack", "com.microsoft.teams",
         )
+    }
+
+    private var unlockReceiver: BroadcastReceiver? = null
+
+    /**
+     * "סיכום בפתיחת הטלפון": האזנה לאירוע שחרור הנעילה (ACTION_USER_PRESENT) בלבד.
+     * אין טיימר ואין שירות נוסף – המערכת מעירה את הקוד רק ברגע הפתיחה, והוא מסתיים מיד.
+     */
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        registerUnlockReceiver()
+    }
+
+    override fun onListenerDisconnected() {
+        unregisterUnlockReceiver()
+        super.onListenerDisconnected()
+    }
+
+    override fun onDestroy() {
+        unregisterUnlockReceiver()
+        super.onDestroy()
+    }
+
+    private fun registerUnlockReceiver() {
+        if (unlockReceiver != null) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                try {
+                    val store = SpendStore.get(context)
+                    if (!store.showOnUnlock) return
+                    val today = store.todaySnapshot()
+                    if (today.totalMinor <= 0L) return // עוד לא הוצאת היום – אין מה להראות
+                    OverlayManager.show(
+                        context,
+                        OverlayInfo(
+                            lastTx = null, lastTxHomeMinor = null,
+                            totalMinor = today.totalMinor, budgetMinor = store.budgetMinor,
+                            homeCurrency = store.homeCurrency, justCrossed = false,
+                        )
+                    )
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to show unlock summary", t)
+                }
+            }
+        }
+        val filter = IntentFilter(Intent.ACTION_USER_PRESENT)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(receiver, filter)
+        }
+        unlockReceiver = receiver
+    }
+
+    private fun unregisterUnlockReceiver() {
+        val receiver = unlockReceiver ?: return
+        unlockReceiver = null
+        try {
+            unregisterReceiver(receiver)
+        } catch (_: IllegalArgumentException) {
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {

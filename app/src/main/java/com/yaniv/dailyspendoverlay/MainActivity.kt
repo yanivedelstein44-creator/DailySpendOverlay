@@ -87,6 +87,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var tvBrightness: TextView
     private lateinit var seekBrightness: SeekBar
     private lateinit var swOverlayFull: Switch
+    private lateinit var swOnUnlock: Switch
     private lateinit var etRules: EditText
     private lateinit var etWage: EditText
     private lateinit var tvWageSymbol: TextView
@@ -227,6 +228,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvBrightness = findViewById(R.id.tvBrightness)
         seekBrightness = findViewById(R.id.seekBrightness)
         swOverlayFull = findViewById(R.id.swOverlayFull)
+        swOnUnlock = findViewById(R.id.swOnUnlock)
         etRules = findViewById(R.id.etRules)
         etWage = findViewById(R.id.etWage)
         tvWageSymbol = findViewById(R.id.tvWageSymbol)
@@ -472,6 +474,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swOverlayFull.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.overlayFull = checked
         }
+        swOnUnlock.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.showOnUnlock = checked
+        }
         seekBrightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 tvBrightness.text = getString(R.string.appearance_brightness, progress)
@@ -491,6 +496,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvBrightness.text = getString(R.string.appearance_brightness, store.brightnessPercent)
         suppressSwitchCallbacks = true
         swOverlayFull.isChecked = store.overlayFull
+        swOnUnlock.isChecked = store.showOnUnlock
         suppressSwitchCallbacks = false
         buildSwatches()
     }
