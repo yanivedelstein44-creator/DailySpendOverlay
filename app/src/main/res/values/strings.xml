@@ -16,6 +16,8 @@
     <string name="reset_confirm">לאפס את הסכום של היום ל-0?\nאפשר לשחזר עד סוף היום.</string>
     <string name="btn_restore_today">↩ שחזר את ההוצאות של היום (%1$s)</string>
     <string name="restored_today">ההוצאות של היום שוחזרו ✓</string>
+    <string name="btn_restore_from_log">↩ שחזר את ההוצאות של היום מהיומן (%1$s)</string>
+    <string name="restore_from_log_confirm">לפי היומן הוצאת היום %1$s ב-%2$d תשלומים (כפילויות נספרו פעם אחת).\nהסכום עכשיו: %3$s.\n\nלשחזר?</string>
     <string name="yes">כן</string>
     <string name="cancel">ביטול</string>
 

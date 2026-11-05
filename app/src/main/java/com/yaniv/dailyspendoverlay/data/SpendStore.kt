@@ -10,10 +10,12 @@ import com.yaniv.dailyspendoverlay.core.Currencies
 import com.yaniv.dailyspendoverlay.core.DailyLedger
 import com.yaniv.dailyspendoverlay.core.DetectionEntry
 import com.yaniv.dailyspendoverlay.core.DetectionLog
+import com.yaniv.dailyspendoverlay.core.DetectionStatus
 import com.yaniv.dailyspendoverlay.core.FxRates
 import com.yaniv.dailyspendoverlay.core.FxTable
 import com.yaniv.dailyspendoverlay.core.LedgerResult
 import com.yaniv.dailyspendoverlay.core.LedgerState
+import com.yaniv.dailyspendoverlay.core.LogReplay
 import com.yaniv.dailyspendoverlay.core.ResetBackup
 import com.yaniv.dailyspendoverlay.core.ResetUndo
 import com.yaniv.dailyspendoverlay.core.SourceRules
@@ -21,7 +23,9 @@ import com.yaniv.dailyspendoverlay.core.ThemeColor
 import com.yaniv.dailyspendoverlay.core.Themes
 import com.yaniv.dailyspendoverlay.core.WorkTime
 import com.yaniv.dailyspendoverlay.net.OnlinePurpose
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Currency
 import java.util.Locale
 
@@ -288,6 +292,47 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         saveState(restored)
         saveResetBackup(null)
         return true
+    }
+
+    /**
+     * "שחזר מהיומן": הסכום של היום כפי שהוא יוצא מחישוב מחדש של היומן (null = אין ביומן תשלומים של היום).
+     * @param installmentDetail הטקסט שנרשם ביומן לעסקה בתשלומים שהוחרגה
+     */
+    fun rebuildTodayFromLog(installmentDetail: String): LedgerState? {
+        val day = today()
+        val zone = ZoneId.systemDefault()
+        val home = homeCurrency
+        val items = readLog().mapNotNull { entry ->
+            val entryDay = Instant.ofEpochMilli(entry.timeMillis).atZone(zone).toLocalDate().toString()
+            if (entryDay != day) return@mapNotNull null
+            when {
+                entry.status == DetectionStatus.COUNTED -> {
+                    val homeMinor = if (entry.amount.currency == home) entry.amount.minor
+                    else convertToHome(entry.amount)?.homeMinor ?: return@mapNotNull null
+                    LogReplay.Item(entry.timeMillis, entry.amount, homeMinor)
+                }
+                entry.status == DetectionStatus.EXCLUDED && entry.detail == installmentDetail ->
+                    LogReplay.Item(entry.timeMillis, entry.amount, 0L, installmentExclusion = true)
+                else -> null
+            }
+        }
+        if (items.none { !it.installmentExclusion }) return null
+        return LogReplay.rebuild(items, day)
+    }
+
+    /** מחליף את הסכום של היום בתוצאת החישוב מהיומן (זיהוי הכפילויות החי נשאר כמו שהוא) */
+    @Synchronized
+    fun applyRebuiltToday(rebuilt: LedgerState) {
+        val current = DailyLedger.rollover(loadState(), today())
+        saveState(
+            current.copy(
+                totalMinor = rebuilt.totalMinor,
+                count = rebuilt.count,
+                lastTx = rebuilt.lastTx,
+                lastTxHomeMinor = rebuilt.lastTxHomeMinor,
+            )
+        )
+        saveResetBackup(null)
     }
 
     private fun loadResetBackup(): ResetBackup? {

@@ -61,6 +61,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     companion object {
         private const val REQ_PICK_APK = 41
         private const val REQ_POST_NOTIFICATIONS = 42
+        /** מתחת לשקל הבדל לא מציעים שחזור מהיומן (עיגולי המרת מטבע) */
+        private const val RESTORE_FROM_LOG_MIN_DIFF_MINOR = 100L
         private const val AUTO_UPDATE_CHECK_INTERVAL_MS = 30L * 60 * 1000
     }
 
@@ -278,8 +280,28 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
             }
         }
         findViewById<Button>(R.id.btnRestoreToday).setOnClickListener {
-            if (store.restoreToday()) toast(getString(R.string.restored_today))
-            refreshToday()
+            if (store.restorableToday() != null) {
+                if (store.restoreToday()) toast(getString(R.string.restored_today))
+                refreshToday()
+                return@setOnClickListener
+            }
+            // אין גיבוי (איפוס בגרסה ישנה): חישוב מחדש מהיומן, ורק אחרי אישור
+            val rebuilt = store.rebuildTodayFromLog(getString(R.string.log_installments_excluded))
+                ?: return@setOnClickListener
+            val home = store.homeCurrency
+            val current = store.todaySnapshot()
+            confirm(
+                getString(
+                    R.string.restore_from_log_confirm,
+                    Money.format(rebuilt.totalMinor, home),
+                    rebuilt.count,
+                    Money.format(current.totalMinor, home),
+                )
+            ) {
+                store.applyRebuiltToday(rebuilt)
+                toast(getString(R.string.restored_today))
+                refreshToday()
+            }
         }
     }
 
@@ -303,11 +325,23 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         }
         cardToday.background = OverlayManager.cardBackground(this, status.isOver, cornerDp = 18f)
 
-        // "שחזר" מופיע רק אחרי איפוס, באותו יום, ומראה כמה יחזור
+        // "שחזר": אחרי איפוס (מהגיבוי), או – אם אין גיבוי – כשהיומן מראה יותר ממה שנספר עכשיו
         val restore = findViewById<Button>(R.id.btnRestoreToday)
         val backup = store.restorableToday()
-        restore.visibility = if (backup != null) View.VISIBLE else View.GONE
-        if (backup != null) restore.text = getString(R.string.btn_restore_today, Money.format(backup.totalMinor, home))
+        val fromLog = if (backup != null) null
+        else store.rebuildTodayFromLog(getString(R.string.log_installments_excluded))
+            ?.takeIf { it.totalMinor - today.totalMinor >= RESTORE_FROM_LOG_MIN_DIFF_MINOR }
+        when {
+            backup != null -> {
+                restore.text = getString(R.string.btn_restore_today, Money.format(backup.totalMinor, home))
+                restore.visibility = View.VISIBLE
+            }
+            fromLog != null -> {
+                restore.text = getString(R.string.btn_restore_from_log, Money.format(fromLog.totalMinor, home))
+                restore.visibility = View.VISIBLE
+            }
+            else -> restore.visibility = View.GONE
+        }
     }
 
     /** תצוגה מקדימה של החלונית – לא נשמרת ולא משנה את הסכום */

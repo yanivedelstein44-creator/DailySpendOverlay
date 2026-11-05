@@ -28,6 +28,7 @@
 - `listener/` – קליטת התראות.
 - `overlay/OverlayManager` – החלונית, 4 שניות, כחול/אדום.
 - `overlay/LockScreenNotifier` + `overlay/LockScreenBubbleActivity` – כשהטלפון נעול או המסך כבוי: "התראה במסך מלא" שמציגה את הבועה מעל מסך הנעילה ל-4 שניות (או התראה רגילה בלי אישור). החלונית מופיעה שוב בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
-- `core/ResetUndo` – גיבוי לפני "איפוס היום" ושחזור עד סוף היום.
+- `core/ResetUndo` – גיבוי לפני "איפוס היום" ושחזור עד סוף היום. `core/LogReplay` – שחזור מהיומן כשאין גיבוי.
+- בדיקת אמולטור: `.github/workflows/emulator-test.yml` (ידני) מריץ את `.github/emulator-test.sh` ודוחף צילומי מסך ולוגים לענף `emulator-results`.
 - `update/` – עדכון עצמי דרך PackageInstaller (GitHub Releases או קובץ).
 - `MainActivity` – מסך ההגדרות.

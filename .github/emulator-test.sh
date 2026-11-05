@@ -134,6 +134,16 @@ adb logcat -d -s DailySpend:I >> "$LOG" 2>&1
 sleep 5
 adb shell locksettings clear --old 1111 >> "$LOG" 2>&1
 
+step "9. reset done in an old version (no backup) -> restore from the log"
+for i in 1 2 3 4 5 6; do adb shell input swipe 540 600 540 2000 250; sleep 0.4; done
+tap_text "איפוס היום"; sleep 1.5; tap_text "כן"; sleep 2
+adb shell am force-stop $PKG
+adb shell run-as $PKG sed -i '/reset_undo_/d' shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 3
+shot 18-restore-from-log-button; ui_texts 18-restore-from-log-button
+tap_text "מהיומן"; sleep 1.5; shot 19-restore-from-log-confirm; ui_texts 19-restore-from-log-confirm
+tap_text "כן"; sleep 1.5; shot 20-after-restore-from-log; ui_texts 20-after-restore-from-log
+
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1
 adb logcat -d > "$OUT/logcat-full.txt" 2>&1
