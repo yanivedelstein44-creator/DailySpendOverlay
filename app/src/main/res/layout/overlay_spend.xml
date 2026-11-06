@@ -50,7 +50,29 @@
             android:textSize="15sp"
             android:visibility="gone" />
 
+        <!-- "במזומן זה היה:" – השטרות והמטבעות של התשלום (מתג בהגדרות, דלוק כברירת מחדל) -->
         <TextView
+            android:id="@+id/overlayCashLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/overlay_cash_label"
+            android:textAlignment="viewStart"
+            android:textColor="#D9FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <com.yaniv.dailyspendoverlay.overlay.FlowRow
+            android:id="@+id/overlayCash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layoutDirection="rtl"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/overlayTodayLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -91,5 +113,36 @@
             android:textColor="#F2FFFFFF"
             android:textDirection="rtl"
             android:textSize="16sp" />
+
+        <!-- ארנק שמתרוקן: רק כשמוגדר תקציב יומי – במקום פס התקציב ובמקום השטרות של התשלום -->
+        <FrameLayout
+            android:id="@+id/overlayWallet"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="12dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/overlayWalletLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textAlignment="viewStart"
+            android:textColor="#FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/overlayWalletSpent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAlignment="viewStart"
+            android:textColor="#E6FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="14sp"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

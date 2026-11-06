@@ -22,6 +22,10 @@ pay() { # tag amount merchant
   echo "pay $1 $2 $3" >> "$LOG"
   adb shell "cmd notification post -S bigtext -t 'Google Wallet' $1 '$3 ₪$2'" >> "$LOG" 2>&1
 }
+payraw() { # tag "full text" (למשל תשלום ביורו / בדולר)
+  echo "payraw $1 $2" >> "$LOG"
+  adb shell "cmd notification post -S bigtext -t 'Google Wallet' $1 '$2'" >> "$LOG" 2>&1
+}
 ui_texts() { # all texts on screen → $OUT/$1.txt
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
   adb pull /sdcard/ui.xml "$OUT/$1.xml" >/dev/null 2>&1
@@ -189,6 +193,29 @@ for i in 1 2 3 4 5 6 7 8; do adb shell input swipe 540 1900 540 500 250; sleep 0
 shot 28-log-after-unfreeze; ui_texts 28-log-after-unfreeze
 adb shell input swipe 540 700 540 1500 300; sleep 1; shot 28b-log-top; ui_texts 28b-log-top
 adb shell input swipe 540 700 540 1500 300; sleep 1; shot 28c-log-top2; ui_texts 28c-log-top2
+
+step "13. bills: euro and dollar payments"
+unlock; adb shell input keyevent KEYCODE_HOME; sleep 2
+payraw p9 "Cafe Paris €37.80"
+sleep 1.5; shot 30-euro-bills; ui_texts 30-euro-bills
+sleep 8
+payraw p10 "NY Deli \$42.65"
+sleep 1.5; shot 31-dollar-bills; ui_texts 31-dollar-bills
+sleep 8
+
+step "14. wallet: daily budget 1000 ₪ -> what is left; then over the budget -> empty wallet"
+adb shell am force-stop $PKG; sleep 1
+adb shell run-as $PKG sed -i '/budget_minor/d' shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+adb shell run-as $PKG sed -i 's#</map>#<long name="budget_minor" value="100000" /></map>#' shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+adb shell run-as $PKG grep budget shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 4
+adb shell input keyevent KEYCODE_HOME; sleep 2
+pay p11 27.43 "Bakery"
+sleep 1.5; shot 32-wallet; ui_texts 32-wallet
+sleep 8
+pay p12 900.00 "TV-Store"
+sleep 1.5; shot 33-wallet-over; ui_texts 33-wallet-over
+sleep 8
 
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1

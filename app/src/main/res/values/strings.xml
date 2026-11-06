@@ -56,6 +56,13 @@
     <string name="overlay_header_reversed">↩ עסקה בתשלומים הוסרה מהסכום היומי</string>
     <string name="overlay_header_preview">תצוגה מקדימה – לא נשמר</string>
     <string name="overlay_last_tx">עסקה אחרונה: %1$s</string>
+    <string name="overlay_cash_label">במזומן זה היה:</string>
+    <string name="overlay_wallet_label">נשאר בארנק להיום</string>
+    <string name="overlay_wallet_empty">הארנק ריק</string>
+    <string name="overlay_wallet_left">נשארו לך בארנק: %1$s</string>
+    <string name="overlay_wallet_over">חרגת ב-%1$s מהתקציב היומי</string>
+    <string name="overlay_wallet_spent">יצאו היום %1$s מתוך %2$s</string>
+    <string name="appearance_cash_switch">להציג את התשלום כשטרות ומטבעות (שקל, יורו ודולר)</string>
     <string name="overlay_today_label">הוצאת היום</string>
     <string name="overlay_remaining">נשארו %1$s מתוך %2$s</string>
     <string name="overlay_over_by">חריגה של %1$s מעל התקציב (%2$s)</string>

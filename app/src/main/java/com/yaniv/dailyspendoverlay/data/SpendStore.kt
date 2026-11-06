@@ -65,6 +65,7 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_ON_UNLOCK = "show_on_unlock"
         private const val KEY_LOG_UNLISTED = "log_unlisted"
         private const val KEY_SOURCE_PREFIX = "source_on_"
+        private const val KEY_SHOW_CASH = "show_cash_breakdown"
         private const val KEY_LOCK_SCREEN = "show_on_lock_screen"
         private const val KEY_PENDING_UNLOCK = "pending_unlock_millis"
         private const val KEY_UNDO_DAY = "reset_undo_day"
@@ -213,6 +214,13 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         get() = preferences.getLong(KEY_WORK_HOURS, WorkTime.MONTHLY_HOURS)
         set(value) {
             preferences.edit().putLong(KEY_WORK_HOURS, value.coerceIn(1L, 744L)).apply()
+        }
+
+    /** "במזומן זה היה:" – להציג בבועה את התשלום כשטרות ומטבעות. דלוק כברירת מחדל */
+    var showCashBreakdown: Boolean
+        get() = preferences.getBoolean(KEY_SHOW_CASH, true)
+        set(value) {
+            preferences.edit().putBoolean(KEY_SHOW_CASH, value).apply()
         }
 
     /** גודל החלונית: false = כרטיס (ברירת מחדל), true = מסך מלא – רק אם המשתמש הדליק את המתג */

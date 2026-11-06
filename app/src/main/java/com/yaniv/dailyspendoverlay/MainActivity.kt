@@ -96,6 +96,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var tvBrightness: TextView
     private lateinit var seekBrightness: SeekBar
     private lateinit var swOverlayFull: Switch
+    private lateinit var swCashBills: Switch
     private lateinit var swOnUnlock: Switch
     private lateinit var swLogUnlisted: Switch
     private lateinit var sourceSwitches: LinearLayout
@@ -245,6 +246,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvBrightness = findViewById(R.id.tvBrightness)
         seekBrightness = findViewById(R.id.seekBrightness)
         swOverlayFull = findViewById(R.id.swOverlayFull)
+        swCashBills = findViewById(R.id.swCashBills)
         swOnUnlock = findViewById(R.id.swOnUnlock)
         swLogUnlisted = findViewById(R.id.swLogUnlisted)
         sourceSwitches = findViewById(R.id.sourceSwitches)
@@ -555,6 +557,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     // ==================================================================
 
     private fun setupAppearance() {
+        swCashBills.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.showCashBreakdown = checked
+        }
         swOverlayFull.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.overlayFull = checked
         }
@@ -593,6 +598,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvBrightness.text = getString(R.string.appearance_brightness, store.brightnessPercent)
         suppressSwitchCallbacks = true
         swOverlayFull.isChecked = store.overlayFull
+        swCashBills.isChecked = store.showCashBreakdown
         swOnUnlock.isChecked = store.showOnUnlock
         swLogUnlisted.isChecked = store.logUnlisted
         swLockScreen.isChecked = store.showOnLockScreen

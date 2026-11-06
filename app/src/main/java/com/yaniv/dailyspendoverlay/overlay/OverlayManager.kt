@@ -24,6 +24,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -31,6 +32,7 @@ import android.widget.Toast
 import com.yaniv.dailyspendoverlay.R
 import com.yaniv.dailyspendoverlay.core.Amount
 import com.yaniv.dailyspendoverlay.core.BudgetStatus
+import com.yaniv.dailyspendoverlay.core.CashBreakdown
 import com.yaniv.dailyspendoverlay.core.Money
 import com.yaniv.dailyspendoverlay.core.Themes
 import com.yaniv.dailyspendoverlay.data.SpendStore
@@ -281,17 +283,47 @@ object OverlayManager {
         extra.text = extraLines.joinToString("\n")
         extra.visibility = if (extraLines.isEmpty()) View.GONE else View.VISIBLE
 
+        // עם תקציב יומי (ומטבע ראשי שקל/יורו/דולר): ארנק שמתרוקן – במקום השטרות ובמקום פס התקציב
+        val walletMode = status.hasBudget && CashBreakdown.supports(info.homeCurrency)
+
+        // "במזומן זה היה:" – השטרות והמטבעות של התשלום (שקל / יורו / דולר; מתג בהגדרות)
+        val cashLabel = view.findViewById<TextView>(R.id.overlayCashLabel)
+        val cashRow = view.findViewById<FlowRow>(R.id.overlayCash)
+        val tx = info.lastTx
+        val showCash = !walletMode && tx != null && !info.reversed && SpendStore.get(ctx).showCashBreakdown &&
+            CashChips.fill(cashRow, tx, full)
+        if (!showCash) cashRow.removeAllViews()
+        cashLabel.visibility = if (showCash) View.VISIBLE else View.GONE
+        cashRow.visibility = if (showCash) View.VISIBLE else View.GONE
+
+        val todayLabel = view.findViewById<TextView>(R.id.overlayTodayLabel)
         val totalView = view.findViewById<TextView>(R.id.overlayTotal)
         totalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (full) 76f else 56f)
-        countUp(totalView, info)
+        if (walletMode) {
+            // "נשאר בארנק להיום" – הסכום יורד (כמו כסף שיוצא); בחריגה – "הארנק ריק"
+            todayLabel.setText(R.string.overlay_wallet_label)
+            if (status.isOver) {
+                (totalView.tag as? ValueAnimator)?.cancel()
+                totalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (full) 60f else 44f)
+                totalView.setText(R.string.overlay_wallet_empty)
+            } else {
+                val from = info.previousTotalMinor?.let { info.budgetMinor - it }
+                animateAmount(totalView, from, status.remainingMinor, info.homeCurrency)
+            }
+        } else {
+            todayLabel.setText(R.string.overlay_today_label)
+            countUp(totalView, info)
+        }
 
         val progress = view.findViewById<ProgressBar>(R.id.overlayProgress)
         applyProgress(ctx, progress, status)
-        progress.visibility = if (status.hasBudget) View.VISIBLE else View.GONE
+        progress.visibility = if (status.hasBudget && !walletMode) View.VISIBLE else View.GONE
 
         val budgetView = view.findViewById<TextView>(R.id.overlayBudgetLine)
-        budgetView.visibility = if (status.hasBudget) View.VISIBLE else View.GONE
+        budgetView.visibility = if (status.hasBudget && !walletMode) View.VISIBLE else View.GONE
         if (status.hasBudget) budgetView.text = budgetLine(ctx, status, info.homeCurrency)
+
+        bindWallet(view, info, status, walletMode, full)
 
         if (status.isOver && info.justCrossed) pulse(card) else popIn(card)
     }
@@ -301,23 +333,59 @@ object OverlayManager {
      * האנימציה רצה רק כשהחלונית גלויה על המסך, ונעצרת לפני עדכון הבא.
      */
     private fun countUp(totalView: TextView, info: OverlayInfo) {
-        (totalView.tag as? ValueAnimator)?.cancel()
-        val target = info.totalMinor
-        val from = info.previousTotalMinor
-        totalView.text = Money.format(target, info.homeCurrency)
-        if (from == null || from < 0 || from >= target) return
-        totalView.text = Money.format(from, info.homeCurrency)
+        val from = info.previousTotalMinor?.takeIf { it < info.totalMinor }
+        animateAmount(totalView, from, info.totalMinor, info.homeCurrency)
+    }
+
+    /** הסכום "רץ" מ-from ל-to (עולה בסכום היומי, יורד בארנק). בלי from – מוצג מיד */
+    private fun animateAmount(view: TextView, from: Long?, to: Long, currency: String) {
+        (view.tag as? ValueAnimator)?.cancel()
+        view.text = Money.format(to, currency)
+        if (from == null || from < 0 || to < 0 || from == to) return
+        view.text = Money.format(from, currency)
         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = COUNT_UP_MS // מתחיל מיד, יחד עם ההופעה
             interpolator = DecelerateInterpolator()
             addUpdateListener {
                 val fraction = it.animatedValue as Float
-                val value = from + ((target - from) * fraction).toLong()
-                totalView.text = Money.format(value, info.homeCurrency)
+                val value = from + ((to - from) * fraction).toLong()
+                view.text = Money.format(value, currency)
             }
         }
-        totalView.tag = animator
+        view.tag = animator
         animator.start()
+    }
+
+    /** הארנק ושתי השורות שמתחתיו – רק במצב ארנק; אחרת מוסתרים */
+    private fun bindWallet(view: View, info: OverlayInfo, status: BudgetStatus, walletMode: Boolean, full: Boolean) {
+        val ctx = view.context
+        val frame = view.findViewById<FrameLayout>(R.id.overlayWallet)
+        val line = view.findViewById<TextView>(R.id.overlayWalletLine)
+        val spent = view.findViewById<TextView>(R.id.overlayWalletSpent)
+        if (!walletMode) {
+            frame.removeAllViews()
+            frame.visibility = View.GONE
+            line.visibility = View.GONE
+            spent.visibility = View.GONE
+            return
+        }
+        val currency = info.homeCurrency
+        val remaining = status.remainingMinor
+        WalletViews.fill(frame, remaining.coerceAtLeast(0), currency, status.isOver, full)
+        val left = CashBreakdown.of(remaining.coerceAtLeast(0), currency).orEmpty()
+        line.text = when {
+            status.isOver -> ctx.getString(R.string.overlay_wallet_over, Money.format(-remaining, currency))
+            left.isEmpty() -> ctx.getString(R.string.overlay_wallet_empty)
+            else -> ctx.getString(R.string.overlay_wallet_left, CashBreakdown.describe(left, currency))
+        }
+        spent.text = ctx.getString(
+            R.string.overlay_wallet_spent,
+            Money.format(info.totalMinor, currency),
+            Money.format(info.budgetMinor, currency),
+        )
+        frame.visibility = View.VISIBLE
+        line.visibility = View.VISIBLE
+        spent.visibility = View.VISIBLE
     }
 
     /** "קפיצה" קטנה בכל הופעה */
