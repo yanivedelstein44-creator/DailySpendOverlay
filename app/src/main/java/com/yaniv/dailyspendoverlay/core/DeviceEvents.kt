@@ -1,9 +1,13 @@
 package com.yaniv.dailyspendoverlay.core
 
+import java.time.Instant
+import java.time.ZoneId
+
 /**
  * לוגיקה טהורה (בלי תלות באנדרואיד) לשני מצבים מיוחדים של תשלום:
  *  • תשלום שזוהה כשהטלפון נעול – החלונית נדחית עד שחרור הנעילה.
  *  • התראה שהגיעה לאפליקציה באיחור – אבחון בלבד, מוצג ביומן.
+ *  • השלמה: כשהקליטה חוזרת אחרי שהטלפון עצר אותה – אילו התראות עוד רלוונטיות.
  */
 object DeviceEvents {
 
@@ -15,6 +19,20 @@ object DeviceEvents {
 
     /** אם הבועה הוצגה מעל מסך הנעילה ממש עכשיו, לא מציגים אותה שוב מיד בפתיחה */
     const val RECENT_LOCK_BUBBLE_MS = 15_000L
+
+    /** השלמה בחיבור מחדש: רק התראות מהשעה האחרונה */
+    const val CATCH_UP_WINDOW_MS = 60L * 60 * 1000
+
+    /**
+     * התראה שעדיין מוצגת כשהקליטה חוזרת – לבדוק אותה שוב?
+     * רק מהשעה האחרונה, ורק מאותו יום (תשלום של אתמול לא נכנס לסכום של היום).
+     */
+    fun isCatchUpCandidate(postTimeMillis: Long, nowMillis: Long, zone: ZoneId = ZoneId.systemDefault()): Boolean {
+        val age = nowMillis - postTimeMillis
+        if (postTimeMillis <= 0 || age !in 0..CATCH_UP_WINDOW_MS) return false
+        return Instant.ofEpochMilli(postTimeMillis).atZone(zone).toLocalDate() ==
+            Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalDate()
+    }
 
     fun isPendingFresh(pendingAtMillis: Long, nowMillis: Long): Boolean =
         pendingAtMillis > 0 && (nowMillis - pendingAtMillis) in 0..PENDING_MAX_AGE_MS

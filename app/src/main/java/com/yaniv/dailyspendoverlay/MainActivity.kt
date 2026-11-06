@@ -86,6 +86,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var btnAppInfo: Button
     private lateinit var tvOverlayStatus: TextView
     private lateinit var btnOverlay: Button
+    private lateinit var tvBatteryStatus: TextView
+    private lateinit var btnBattery: Button
+    private lateinit var tvSamsungHint: TextView
+    private lateinit var btnSamsungSleep: Button
     private lateinit var etBudget: EditText
     private lateinit var tvBudgetSymbol: TextView
     private lateinit var spHomeCurrency: Spinner
@@ -233,6 +237,10 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         btnAppInfo = findViewById(R.id.btnAppInfo)
         tvOverlayStatus = findViewById(R.id.tvOverlayStatus)
         btnOverlay = findViewById(R.id.btnOverlay)
+        tvBatteryStatus = findViewById(R.id.tvBatteryStatus)
+        btnBattery = findViewById(R.id.btnBattery)
+        tvSamsungHint = findViewById(R.id.tvSamsungHint)
+        btnSamsungSleep = findViewById(R.id.btnSamsungSleep)
         etBudget = findViewById(R.id.etBudget)
         tvBudgetSymbol = findViewById(R.id.tvBudgetSymbol)
         spHomeCurrency = findViewById(R.id.spHomeCurrency)
@@ -390,6 +398,8 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         btnNotifAccess.setOnClickListener { Permissions.openNotificationAccess(this) }
         btnOverlay.setOnClickListener { Permissions.openOverlaySettings(this) }
         btnAppInfo.setOnClickListener { Permissions.openAppDetails(this) }
+        btnBattery.setOnClickListener { Permissions.requestBatteryUnrestricted(this) }
+        btnSamsungSleep.setOnClickListener { Permissions.openSamsungNeverSleeping(this) }
     }
 
     private fun refreshPermissions() {
@@ -405,6 +415,16 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         tvOverlayStatus.setText(if (overlay) R.string.perm_overlay_ok else R.string.perm_overlay_missing)
         tvOverlayStatus.setTextColor(getColor(if (overlay) R.color.ok_green else R.color.warn_red))
         btnOverlay.visibility = if (overlay) View.GONE else View.VISIBLE
+
+        // חיסכון בסוללה: אם הוא מגביל, הטלפון מקפיא את האפליקציה והבועה קופצת רק כשפותחים אותה
+        val battery = Permissions.isBatteryUnrestricted(this)
+        tvBatteryStatus.setText(if (battery) R.string.perm_battery_ok else R.string.perm_battery_missing)
+        tvBatteryStatus.setTextColor(getColor(if (battery) R.color.ok_green else R.color.warn_red))
+        btnBattery.visibility = if (battery) View.GONE else View.VISIBLE
+        // סמסונג: אין דרך לבדוק את הרשימה "אף פעם לא במצב שינה", אז ההסבר והכפתור תמיד מוצגים
+        val samsung = Permissions.isSamsung()
+        tvSamsungHint.visibility = if (samsung) View.VISIBLE else View.GONE
+        btnSamsungSleep.visibility = if (samsung) View.VISIBLE else View.GONE
     }
 
     // ==================================================================

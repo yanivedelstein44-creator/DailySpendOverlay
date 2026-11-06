@@ -1,6 +1,8 @@
 package com.yaniv.dailyspendoverlay.util
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -8,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import com.yaniv.dailyspendoverlay.listener.SpendNotificationListener
 
@@ -58,6 +61,48 @@ object Permissions {
             tryStart(activity, Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, packageUri(activity)))
         ) return
         openAppNotificationSettings(activity)
+    }
+
+    /**
+     * חיסכון בסוללה לא מגביל את האפליקציה ("ללא הגבלה")?
+     * אם הוא מגביל, הטלפון יכול להקפיא אותה ברקע – ואז התשלום מגיע אליה רק כשפותחים אותה.
+     * האישור לא מוסיף עבודה ברקע: האפליקציה עדיין מגיבה רק להתראות.
+     */
+    fun isBatteryUnrestricted(context: Context): Boolean {
+        val power = context.getSystemService(PowerManager::class.java) ?: return true
+        return power.isIgnoringBatteryOptimizations(context.packageName) && !isBackgroundRestricted(context)
+    }
+
+    /** המשתמש בחר "מוגבל" בהגדרות הסוללה של האפליקציה (אנדרואיד 9+) */
+    fun isBackgroundRestricted(context: Context): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+            context.getSystemService(ActivityManager::class.java)?.isBackgroundRestricted == true
+
+    /** חלון המערכת "לאפשר לאפליקציה לפעול תמיד ברקע?" – או פרטי האפליקציה, אם הוגדרה "מוגבלת" */
+    @SuppressLint("BatteryLife") // אפליקציה פרטית מחוץ ל-Play; בלי זה סמסונג מקפיאה את קליטת ההתראות
+    fun requestBatteryUnrestricted(activity: Activity) {
+        if (!isBackgroundRestricted(activity) &&
+            tryStart(activity, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri(activity)))
+        ) return
+        openAppDetails(activity) // שם: סוללה ← "ללא הגבלה"
+    }
+
+    fun isSamsung(): Boolean = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
+
+    /**
+     * סמסונג: הרשימה "אף פעם לא במצב שינה" (הגדרות ← סוללה ← הגבלות שימוש ברקע).
+     * ה-Intent מהתיעוד של סמסונג למפתחים; אם הוא לא קיים בגרסה הזו – מסך הסוללה, ואז פרטי האפליקציה.
+     */
+    fun openSamsungNeverSleeping(activity: Activity) {
+        val list = Intent("com.samsung.android.sm.ACTION_OPEN_CHECKABLE_LISTACTIVITY")
+            .setPackage("com.samsung.android.lool")
+            .putExtra("activity_type", 2) // 0 = במצב שינה, 1 = שינה עמוקה, 2 = אף פעם לא במצב שינה
+        if (tryStart(activity, list)) return
+        val battery = Intent().setComponent(
+            ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity")
+        )
+        if (tryStart(activity, battery)) return
+        openAppDetails(activity)
     }
 
     /** "התקנת אפליקציות לא ידועות" – נדרש כדי שהאפליקציה תוכל לעדכן את עצמה */

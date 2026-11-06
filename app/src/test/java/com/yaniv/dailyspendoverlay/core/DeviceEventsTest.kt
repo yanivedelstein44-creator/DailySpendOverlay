@@ -5,8 +5,33 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 class DeviceEventsTest {
+
+    private val zone = ZoneId.of("Asia/Jerusalem")
+    private fun at(h: Int, m: Int, day: Int = 6) =
+        LocalDateTime.of(2026, 11, day, h, m).atZone(zone).toInstant().toEpochMilli()
+
+    @Test fun catchUpTakesNotificationsFromTheLastHour() {
+        assertTrue(DeviceEvents.isCatchUpCandidate(at(15, 42), at(16, 30), zone))
+        assertTrue(DeviceEvents.isCatchUpCandidate(at(16, 30), at(16, 30), zone))
+    }
+
+    @Test fun catchUpSkipsOlderThanAnHour() {
+        assertFalse(DeviceEvents.isCatchUpCandidate(at(15, 20), at(16, 30), zone))
+    }
+
+    @Test fun catchUpSkipsYesterdaysPayment() {
+        // שילמת ב-23:50, הקליטה חזרה ב-00:10 – זה שייך לאתמול, לא לסכום של היום
+        assertFalse(DeviceEvents.isCatchUpCandidate(at(23, 50, day = 5), at(0, 10), zone))
+    }
+
+    @Test fun catchUpSkipsFutureAndMissingTimes() {
+        assertFalse(DeviceEvents.isCatchUpCandidate(at(16, 31), at(16, 30), zone))
+        assertFalse(DeviceEvents.isCatchUpCandidate(0, at(16, 30), zone))
+    }
 
     @Test fun pendingWithinAnHourIsFresh() {
         assertTrue(DeviceEvents.isPendingFresh(1_000_000, 1_000_000 + 59 * 60_000L))

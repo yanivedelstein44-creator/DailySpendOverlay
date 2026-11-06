@@ -8,6 +8,7 @@
    - אין להוסיף מטרות רשת חדשות בלי שהמשתמש ביקש במפורש.
 2. **סוללה:** אין שירותי רקע, WakeLock, טיימרים או רענון מחזורי. כל עבודה מתבצעת רק בתגובה להתראה (`SpendNotificationListener`), לשחרור נעילה, או כשהמסך פתוח.
    - ההתראה במסך הנעילה (`LockScreenNotifier`) נעלמת דרך `setTimeoutAfter` של המערכת, לא דרך טיימר באפליקציה. הטיימר של 4 השניות בבועה שמעל הנעילה רץ רק כשהיא גלויה.
+   - מותר לבקש פטור מחיסכון בסוללה (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) ולהפנות לרשימת "אף פעם לא במצב שינה" של סמסונג. זה רק מונע מהטלפון להקפיא את קליטת ההתראות, ולא מוסיף עבודה ברקע.
 3. **חתימה:** תמיד `keystore/dailyspend.jks`, עם alias `dailyspend`.
    - אסור ליצור מפתח חדש, כי זה ישבור עדכונים למשתמשים קיימים.
    - `keystore/keystore.properties` לא נכנס ל-git.
@@ -25,7 +26,7 @@
   - `DailyLedger` – סכום יומי, איפוס יומי, כפילויות שעה, החרגת תשלומים.
   - `Currencies`, `FxRates`, `SourceRules`, `DetectionLog`.
 - `data/SpendStore` – SharedPreferences.
-- `listener/` – קליטת התראות.
+- `listener/` – קליטת התראות. בכל חיבור מחדש (`onListenerConnected`) יש השלמה חד-פעמית: תשלומים מהשעה האחרונה שעדיין מוצגים ולא טופלו נספרים בלי חלונית (`DeviceEvents.isCatchUpCandidate`, טביעות ב-`SpendStore.isKnownFingerprint`).
 - `overlay/OverlayManager` – החלונית, 4 שניות, כחול/אדום.
 - `overlay/LockScreenNotifier` + `overlay/LockScreenBubbleActivity` – כשהטלפון נעול או המסך כבוי: "התראה במסך מלא" שמציגה את הבועה מעל מסך הנעילה ל-4 שניות (או התראה רגילה בלי אישור). החלונית מופיעה שוב בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
 - `core/ResetUndo` – גיבוי לפני "איפוס היום" ושחזור עד סוף היום. `core/LogReplay` – שחזור מהיומן כשאין גיבוי.

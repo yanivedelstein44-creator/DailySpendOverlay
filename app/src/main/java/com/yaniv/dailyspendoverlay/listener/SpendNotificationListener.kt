@@ -57,6 +57,31 @@ class SpendNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         registerUnlockReceiver()
+        catchUpMissed()
+    }
+
+    /**
+     * השלמה: אם הטלפון עצר את הקליטה (למשל "מצב שינה" של סמסונג), תשלום שהגיע בינתיים לא נספר.
+     * כשהקליטה חוזרת עוברים פעם אחת על ההתראות שעדיין מוצגות מהשעה האחרונה, וסופרים רק את מה שלא טופל.
+     * רץ רק בתגובה לחיבור (אירוע של המערכת) – בלי טיימר ובלי סריקה מחזורית. בלי חלונית: זה כבר באיחור.
+     */
+    private fun catchUpMissed() {
+        val now = System.currentTimeMillis()
+        val active = try {
+            activeNotifications
+        } catch (t: Throwable) {
+            Log.w(TAG, "catch-up: no active notifications", t)
+            null
+        } ?: return
+        active.filter { DeviceEvents.isCatchUpCandidate(it.postTime, now) }
+            .sortedBy { it.postTime }
+            .forEach { sbn ->
+                try {
+                    handle(sbn, catchUp = true)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "catch-up failed for ${sbn.packageName}", t)
+                }
+            }
     }
 
     override fun onListenerDisconnected() {
@@ -147,7 +172,8 @@ class SpendNotificationListener : NotificationListenerService() {
         }
     }
 
-    private fun handle(sbn: StatusBarNotification) {
+    /** @param catchUp השלמה בחיבור מחדש: סופרים רק מה שלא טופל, בלי חלונית ובלי רישום של מה שלא נספר */
+    private fun handle(sbn: StatusBarNotification, catchUp: Boolean = false) {
         val pkg = sbn.packageName ?: return
         if (pkg == packageName) return
         val notification = sbn.notification ?: return
@@ -182,27 +208,31 @@ class SpendNotificationListener : NotificationListenerService() {
 
         if (!listed) {
             // מקור שלא ברשימה אף פעם לא נספר. נרשם ביומן רק אם המשתמש ביקש (כדי לגלות מקורות חדשים)
-            if (store.logUnlisted) log(DetectionStatus.NOT_LISTED)
+            if (store.logUnlisted && !catchUp) log(DetectionStatus.NOT_LISTED)
             return
         }
         if (!SourceCategory.isCounted(SourceCategory.of(pkg, content.title)) { store.isSourceEnabled(it) }) {
-            log(DetectionStatus.EXCLUDED, getString(R.string.log_source_off))
+            if (!catchUp) log(DetectionStatus.EXCLUDED, getString(R.string.log_source_off))
             return
         }
         if (parsed !is AmountParser.Result.Expense) {
-            if (parsed is AmountParser.Result.Excluded) log(DetectionStatus.EXCLUDED, parsed.reason)
+            if (parsed is AmountParser.Result.Excluded && !catchUp) log(DetectionStatus.EXCLUDED, parsed.reason)
             return
         }
+
+        // טביעה: אותה התראה (מפתח + זמן יצירה) עם אותו סכום = עדכון של אותה עסקה, לא עסקה חדשה
+        val fingerprint = "${sbn.key}|${notification.`when`}|${amount.key}"
+        // השלמה: התראה שכבר טופלה (נספרה / כפילות / הוחרגה) לא נבדקת שוב
+        if (catchUp && store.isKnownFingerprint(fingerprint)) return
 
         val home = store.homeCurrency
         val budget = store.budgetMinor
 
         // ----- מתג "להציג רק הוצאות יומיות": עסקה בתשלומים לא נספרת בכלל -----
         if (parsed.installments != null && store.excludeInstallments) {
-            val fp = "${sbn.key}|${notification.`when`}|${amount.key}"
-            val result = store.excludeTransaction(amount, fp)
+            val result = store.excludeTransaction(amount, fingerprint)
             log(DetectionStatus.EXCLUDED, getString(R.string.log_installments_excluded))
-            if (result is LedgerResult.Reversed) {
+            if (result is LedgerResult.Reversed && !catchUp) {
                 // Google Wallet (בלי פרטי תשלומים) כבר ספר את הקנייה – מראים את הסכום המתוקן
                 announce(
                     OverlayInfo(
@@ -218,6 +248,7 @@ class SpendNotificationListener : NotificationListenerService() {
 
         val conversion = store.convertToHome(amount)
         if (conversion == null) {
+            if (catchUp) return // לא נספר בכל מקרה, ובאיחור אין טעם בחלונית
             // מטבע בלי שום שער ידוע: מראים את העסקה, אבל לא מוסיפים לסכום היומי
             log(DetectionStatus.NO_RATE, amount.currency)
             val today = store.todaySnapshot()
@@ -231,13 +262,10 @@ class SpendNotificationListener : NotificationListenerService() {
             return
         }
 
-        // טביעה: אותה התראה (מפתח + זמן יצירה) עם אותו סכום = עדכון של אותה עסקה, לא עסקה חדשה
-        val fingerprint = "${sbn.key}|${notification.`when`}|${amount.key}"
-
         when (val result = store.registerTransaction(amount, conversion.homeMinor, fingerprint)) {
             is LedgerResult.Counted -> {
                 val total = result.state.totalMinor
-                val shown = announce(
+                val shown = if (catchUp) getString(R.string.diag_catch_up) else announce(
                     OverlayInfo(
                         lastTx = amount,
                         lastTxHomeMinor = if (amount.currency != home) conversion.homeMinor else null,
@@ -260,7 +288,7 @@ class SpendNotificationListener : NotificationListenerService() {
                 ).joinToString(" · ")
                 log(DetectionStatus.COUNTED, detail)
             }
-            is LedgerResult.Duplicate -> log(DetectionStatus.DUPLICATE, result.reason)
+            is LedgerResult.Duplicate -> if (!catchUp) log(DetectionStatus.DUPLICATE, result.reason)
             is LedgerResult.Excluded, is LedgerResult.Reversed -> Unit // לא קורה ב-register
         }
     }

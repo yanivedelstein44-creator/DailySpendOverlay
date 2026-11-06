@@ -23,6 +23,10 @@
          באנדרואיד 14+ המשתמש מאשר אותה בהגדרות. בלי אישור – רק התראה רגילה. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
+    <!-- 6. חלון המערכת "לאפשר ריצה ברקע?" (פטור מחיסכון בסוללה). לא מוסיף עבודה ברקע:
+         רק מונע מהטלפון (בעיקר סמסונג) להקפיא את קליטת ההתראות עד שפותחים את האפליקציה. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- גישה להתראות היא לא uses-permission: היא מוגדרת על השירות למטה
          (BIND_NOTIFICATION_LISTENER_SERVICE) והמשתמש מפעיל אותה ידנית בהגדרות. -->
 

@@ -282,6 +282,9 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
     /** מצב היום להצגה. אם התאריך התחלף ועוד לא היו עסקאות – מחזיר 0. */
     fun todaySnapshot(): LedgerState = DailyLedger.rollover(loadState(), today())
 
+    /** ההתראה הזו כבר טופלה (נספרה / זוהתה ככפילות / הוחרגה)? – להשלמה בחיבור מחדש */
+    fun isKnownFingerprint(fingerprint: String): Boolean = fingerprint in loadState().fingerprints
+
     /** איפוס הסכום של היום. מה שאופס נשמר בצד, כדי שאפשר יהיה לשחזר עד סוף היום */
     @Synchronized
     fun resetToday() {
