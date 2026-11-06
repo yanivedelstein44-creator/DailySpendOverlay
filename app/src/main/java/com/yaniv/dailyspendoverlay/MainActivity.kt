@@ -333,8 +333,12 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         }
         cardToday.background = OverlayManager.cardBackground(this, status.isOver, cornerDp = 18f)
 
-        // "שחזר": אחרי איפוס (מהגיבוי), או – אם אין גיבוי – כשהסכום מהיומן שונה ממה שנספר עכשיו
+        // "שחזר": אחרי איפוס (מהגיבוי), או – אם אין גיבוי – כשהסכום מהיומן שונה ממה שנספר עכשיו.
+        // הכפתור תמיד מוצג; כשאין מה לשחזר הוא אפור, כדי שלא ייראה כאילו נעלם.
         val restore = findViewById<Button>(R.id.btnRestoreToday)
+        restore.visibility = View.VISIBLE
+        restore.isEnabled = true
+        restore.alpha = 1f
         val backup = store.restorableToday()
         val fromLog = if (backup != null) null
         else store.rebuildTodayFromLog(getString(R.string.log_installments_excluded))
@@ -342,7 +346,6 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         when {
             backup != null -> {
                 restore.text = getString(R.string.btn_restore_today, Money.format(backup.totalMinor, home))
-                restore.visibility = View.VISIBLE
             }
             fromLog != null -> {
                 // היומן מראה פחות ממה שנספר = כפילויות שנספרו פעמיים → "תקן"; יותר = "שחזר"
@@ -351,9 +354,12 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
                     if (fix) R.string.btn_fix_from_log else R.string.btn_restore_from_log,
                     Money.format(fromLog.totalMinor, home),
                 )
-                restore.visibility = View.VISIBLE
             }
-            else -> restore.visibility = View.GONE
+            else -> {
+                restore.text = getString(R.string.btn_restore_none)
+                restore.isEnabled = false
+                restore.alpha = 0.45f
+            }
         }
     }
 

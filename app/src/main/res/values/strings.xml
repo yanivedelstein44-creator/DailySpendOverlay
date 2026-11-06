@@ -15,6 +15,7 @@
     <string name="btn_reset_today">איפוס היום</string>
     <string name="reset_confirm">לאפס את הסכום של היום ל-0?\nאפשר לשחזר עד סוף היום.</string>
     <string name="btn_restore_today">↩ שחזר את ההוצאות של היום (%1$s)</string>
+    <string name="btn_restore_none">↩ שחזור – אין כרגע מה לשחזר</string>
     <string name="btn_fix_from_log">↻ תקן את הסכום של היום לפי היומן (%1$s)</string>
     <string name="restored_today">ההוצאות של היום שוחזרו ✓</string>
     <string name="btn_restore_from_log">↩ שחזר את ההוצאות של היום מהיומן (%1$s)</string>
