@@ -204,6 +204,9 @@ sleep 1.5; shot 31-dollar-bills; ui_texts 31-dollar-bills
 sleep 8
 
 step "14. wallet: daily budget 1000 ₪ -> what is left; then over the budget -> empty wallet"
+# בלי זה המערכת מעירה את האפליקציה (בשביל קליטת ההתראות) 50ms אחרי force-stop,
+# היא טוענת את ההגדרות הישנות לזיכרון, והתשלום הבא דורס את התקציב בקובץ.
+adb shell cmd notification disallow_listener $LISTENER >> "$LOG" 2>&1; sleep 2
 adb shell am force-stop $PKG; sleep 1
 # העריכה נעשית כאן ולא ב-shell של הטלפון (שם < > ומרכאות שוברים את הפקודה)
 adb exec-out run-as $PKG cat shared_prefs/daily_spend.xml > /tmp/prefs-budget.xml
@@ -212,7 +215,9 @@ adb push /tmp/prefs-budget.xml /data/local/tmp/daily_spend.xml >> "$LOG" 2>&1
 adb shell chmod 644 /data/local/tmp/daily_spend.xml
 adb shell run-as $PKG cp /data/local/tmp/daily_spend.xml shared_prefs/daily_spend.xml >> "$LOG" 2>&1
 adb shell run-as $PKG grep budget shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+adb shell cmd notification allow_listener $LISTENER >> "$LOG" 2>&1; sleep 4
 adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 4
+shot 32a-app-with-budget; ui_texts 32a-app-with-budget
 adb shell input keyevent KEYCODE_HOME; sleep 2
 pay p11 27.43 "Bakery"
 sleep 1.5; shot 32-wallet; ui_texts 32-wallet
@@ -220,6 +225,7 @@ sleep 8
 pay p12 900.00 "TV-Store"
 sleep 1.5; shot 33-wallet-over; ui_texts 33-wallet-over
 sleep 8
+adb shell run-as $PKG grep budget shared_prefs/daily_spend.xml >> "$LOG" 2>&1
 
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1
