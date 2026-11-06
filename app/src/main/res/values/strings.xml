@@ -73,12 +73,10 @@
     <string name="btn_grant">אישור</string>
     <string name="restricted_hint">באנדרואיד 13 ומעלה, אם המתג אפור: פרטי האפליקציה ← תפריט ⋮ למעלה ← \"התר הגדרות מוגבלות\", ואז חוזרים לכאן.</string>
     <string name="btn_app_info">פרטי האפליקציה</string>
-    <string name="battery_note">האפליקציה לא רצה ברקע: המערכת מעירה אותה לשבריר שנייה רק כשמגיעה התראה. האישורים למעלה רק מונעים מהטלפון להקפיא אותה, ולא מוסיפים צריכת סוללה.</string>
+    <string name="battery_note">האפליקציה לא רצה ברקע: המערכת מעירה אותה לשבריר שנייה רק כשמגיעה התראה. האישור למעלה רק מונע מהטלפון להקפיא אותה, ולא מוסיף צריכת סוללה. בסמסונג הוא כבר כולל את \"אף פעם לא במצב שינה\", ולכן Cash Effect לא תופיע ברשימה ההיא.</string>
     <string name="perm_battery_ok">✓ חיסכון בסוללה לא עוצר את האפליקציה</string>
     <string name="perm_battery_missing">✗ חיסכון בסוללה עוצר את האפליקציה ברקע, ואז הבועה קופצת רק כשפותחים אותה</string>
     <string name="btn_battery">אשר ריצה ברקע</string>
-    <string name="samsung_sleep_hint">בסמסונג צריך גם להוסיף את Cash Effect לרשימה "אף פעם לא במצב שינה": לוחצים על הכפתור, על +, ובוחרים ב-Cash Effect.</string>
-    <string name="btn_samsung_sleep">פתח את הרשימה של סמסונג</string>
 
     <!-- תקציב -->
     <string name="budget_title">תקציב ומטבע</string>

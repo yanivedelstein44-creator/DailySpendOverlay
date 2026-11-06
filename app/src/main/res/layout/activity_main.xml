@@ -180,7 +180,8 @@
                 android:layout_marginTop="6dp"
                 android:text="@string/btn_grant" />
 
-            <!-- חיסכון בסוללה: בלי אישור, סמסונג מקפיאה את קליטת ההתראות עד שפותחים את האפליקציה -->
+            <!-- חיסכון בסוללה: בלי אישור, סמסונג מקפיאה את קליטת ההתראות עד שפותחים את האפליקציה.
+                 בסמסונג "ללא הגבלה" כבר כולל את "אף פעם לא במצב שינה" (ואז האפליקציה לא מופיעה ברשימה ההיא). -->
             <TextView
                 android:id="@+id/tvBatteryStatus"
                 style="@style/DS.Body"
@@ -194,23 +195,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="@string/btn_battery" />
-
-            <TextView
-                android:id="@+id/tvSamsungHint"
-                style="@style/DS.Body"
-                android:layout_marginTop="10dp"
-                android:text="@string/samsung_sleep_hint"
-                android:textSize="13sp"
-                android:visibility="gone" />
-
-            <Button
-                android:id="@+id/btnSamsungSleep"
-                style="@style/DS.Button.Secondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/btn_samsung_sleep"
-                android:visibility="gone" />
 
             <TextView
                 style="@style/DS.Body"

@@ -67,6 +67,7 @@ object Permissions {
      * חיסכון בסוללה לא מגביל את האפליקציה ("ללא הגבלה")?
      * אם הוא מגביל, הטלפון יכול להקפיא אותה ברקע – ואז התשלום מגיע אליה רק כשפותחים אותה.
      * האישור לא מוסיף עבודה ברקע: האפליקציה עדיין מגיבה רק להתראות.
+     * בסמסונג "ללא הגבלה" כבר כולל את "אף פעם לא במצב שינה": אפליקציה כזו יוצאת מהרשימה ההיא ולא מופיעה בה.
      */
     fun isBatteryUnrestricted(context: Context): Boolean {
         val power = context.getSystemService(PowerManager::class.java) ?: return true
@@ -85,24 +86,6 @@ object Permissions {
             tryStart(activity, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri(activity)))
         ) return
         openAppDetails(activity) // שם: סוללה ← "ללא הגבלה"
-    }
-
-    fun isSamsung(): Boolean = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
-
-    /**
-     * סמסונג: הרשימה "אף פעם לא במצב שינה" (הגדרות ← סוללה ← הגבלות שימוש ברקע).
-     * ה-Intent מהתיעוד של סמסונג למפתחים; אם הוא לא קיים בגרסה הזו – מסך הסוללה, ואז פרטי האפליקציה.
-     */
-    fun openSamsungNeverSleeping(activity: Activity) {
-        val list = Intent("com.samsung.android.sm.ACTION_OPEN_CHECKABLE_LISTACTIVITY")
-            .setPackage("com.samsung.android.lool")
-            .putExtra("activity_type", 2) // 0 = במצב שינה, 1 = שינה עמוקה, 2 = אף פעם לא במצב שינה
-        if (tryStart(activity, list)) return
-        val battery = Intent().setComponent(
-            ComponentName("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity")
-        )
-        if (tryStart(activity, battery)) return
-        openAppDetails(activity)
     }
 
     /** "התקנת אפליקציות לא ידועות" – נדרש כדי שהאפליקציה תוכל לעדכן את עצמה */
