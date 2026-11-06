@@ -205,8 +205,12 @@ sleep 8
 
 step "14. wallet: daily budget 1000 ₪ -> what is left; then over the budget -> empty wallet"
 adb shell am force-stop $PKG; sleep 1
-adb shell run-as $PKG sed -i '/budget_minor/d' shared_prefs/daily_spend.xml >> "$LOG" 2>&1
-adb shell run-as $PKG sed -i 's#</map>#<long name="budget_minor" value="100000" /></map>#' shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+# העריכה נעשית כאן ולא ב-shell של הטלפון (שם < > ומרכאות שוברים את הפקודה)
+adb exec-out run-as $PKG cat shared_prefs/daily_spend.xml > /tmp/prefs-budget.xml
+sed -i '/budget_minor/d; s#</map>#    <long name="budget_minor" value="100000" />\n</map>#' /tmp/prefs-budget.xml
+adb push /tmp/prefs-budget.xml /data/local/tmp/daily_spend.xml >> "$LOG" 2>&1
+adb shell chmod 644 /data/local/tmp/daily_spend.xml
+adb shell run-as $PKG cp /data/local/tmp/daily_spend.xml shared_prefs/daily_spend.xml >> "$LOG" 2>&1
 adb shell run-as $PKG grep budget shared_prefs/daily_spend.xml >> "$LOG" 2>&1
 adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 4
 adb shell input keyevent KEYCODE_HOME; sleep 2
