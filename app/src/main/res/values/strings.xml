@@ -40,6 +40,8 @@
     <string name="diag_lock_failed">התראה: נכשלה</string>
     <string name="diag_late">באיחור %1$s</string>
     <string name="diag_catch_up">נקלט רק כשהקליטה חזרה</string>
+    <string name="diag_arrived">הגיע תוך %1$s שנ׳</string>
+    <string name="diag_shown_in">הוצג תוך %1$s שנ׳</string>
     <string name="lock_title">היום: %1$s</string>
     <string name="lock_title_over">⚠ היום: %1$s</string>
     <string name="lock_channel_name">סכום יומי במסך הנעילה</string>

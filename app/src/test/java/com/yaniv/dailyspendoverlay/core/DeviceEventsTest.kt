@@ -14,6 +14,15 @@ class DeviceEventsTest {
     private fun at(h: Int, m: Int, day: Int = 6) =
         LocalDateTime.of(2026, 11, day, h, m).atZone(zone).toInstant().toEpochMilli()
 
+    @Test fun secondsTextRoundsToTenths() {
+        assertEquals("0.0", DeviceEvents.secondsText(0))
+        assertEquals("0.0", DeviceEvents.secondsText(-300))
+        assertEquals("0.2", DeviceEvents.secondsText(240))
+        assertEquals("0.3", DeviceEvents.secondsText(250))
+        assertEquals("1.5", DeviceEvents.secondsText(1_500))
+        assertEquals("12.0", DeviceEvents.secondsText(11_996))
+    }
+
     @Test fun catchUpTakesNotificationsFromTheLastHour() {
         assertTrue(DeviceEvents.isCatchUpCandidate(at(15, 42), at(16, 30), zone))
         assertTrue(DeviceEvents.isCatchUpCandidate(at(16, 30), at(16, 30), zone))

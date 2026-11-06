@@ -45,6 +45,12 @@ object DeviceEvents {
         return !bubbleJustShown
     }
 
+    /** משך קצר בשניות עם ספרה אחת אחרי הנקודה, לאבחון ביומן: 240 → "0.2", 1500 → "1.5" */
+    fun secondsText(millis: Long): String {
+        val tenths = (millis.coerceAtLeast(0) + 50) / 100
+        return "${tenths / 10}.${tenths % 10}"
+    }
+
     /** "45 שניות" / "7 דקות" / "שעה" – או null אם ההתראה לא הגיעה באיחור משמעותי */
     fun lateText(lateMillis: Long): String? {
         val seconds = lateMillis / 1000

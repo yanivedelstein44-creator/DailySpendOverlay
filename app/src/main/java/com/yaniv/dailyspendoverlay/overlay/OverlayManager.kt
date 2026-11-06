@@ -93,7 +93,9 @@ object OverlayManager {
     /** כמה זמן החלונית (וגם ההתראה במסך הנעילה) נשארות על המסך */
     const val VISIBLE_MS = 4_000L
     private const val ANIM_MS = 220L
-    private const val COUNT_UP_MS = 900L
+    /** הופעה קצרה: החלונית נראית כמעט מיד אחרי ההתראה */
+    private const val APPEAR_MS = 120L
+    private const val COUNT_UP_MS = 650L
 
     private val main = Handler(Looper.getMainLooper())
     private var windowContext: Context? = null
@@ -101,6 +103,22 @@ object OverlayManager {
     private var root: View? = null
     private var attachedFull = false
     private val hideRunnable = Runnable { hide() }
+
+    /** חלונית בנויה מראש (ב-warmUp, או זו שהוצגה בפעם הקודמת) – ברגע התשלום נשאר רק למלא ולהציג */
+    private var spare: View? = null
+
+    /**
+     * הכנה מראש כשקליטת ההתראות מתחברת (אירוע של המערכת, פעם אחת – בלי טיימר):
+     * טוען את המחלקות ובונה את החלונית מראש, כדי שבתשלום עצמו היא תופיע מהר יותר.
+     */
+    fun warmUp(context: Context) {
+        if (Looper.myLooper() != Looper.getMainLooper() || spare != null || root != null) return
+        try {
+            spare = inflate(obtainWindowContext(context.applicationContext))
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Overlay warm-up failed", e)
+        }
+    }
 
     /**
      * @param ignoreLock true רק ברגע שחרור הנעילה (ה-Broadcast מגיע לפעמים רגע לפני שהמערכת מעדכנת את מצב הנעילה)
@@ -141,6 +159,7 @@ object OverlayManager {
             // BadTokenException / SecurityException – למשל אם ההרשאה בוטלה בזמן ריצה
             Log.w(TAG, "Overlay failed", e)
             root = null
+            spare = null
             windowContext = null
             showFallbackToast(app, info)
             return ShowResult.FAILED
@@ -150,23 +169,30 @@ object OverlayManager {
     // ------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
+    private fun inflate(ctx: Context): View {
+        val themed = ContextThemeWrapper(ctx, R.style.Theme_DailySpend_Overlay)
+        return LayoutInflater.from(themed).inflate(R.layout.overlay_spend, null, false)
+    }
+
     private fun createAndAttach(app: Context, full: Boolean): View {
         val ctx = obtainWindowContext(app)
         val wm = ctx.getSystemService(WindowManager::class.java)
-        val themed = ContextThemeWrapper(ctx, R.style.Theme_DailySpend_Overlay)
-        val view = LayoutInflater.from(themed).inflate(R.layout.overlay_spend, null, false)
+        val view = spare?.takeIf { it.parent == null } ?: inflate(ctx)
+        spare = null
+        view.animate().cancel()
         view.setOnClickListener { dismissNow() } // נגיעה בחלונית סוגרת אותה מיד
         wm.addView(view, buildParams(ctx, full))
         windowManager = wm
         root = view
         attachedFull = full
 
-        view.alpha = 0f
-        view.translationY = -dp(ctx, 24f)
+        // מתחילה כבר חצי-נראית ונכנסת מהר – בלי "השהיה" מורגשת אחרי ההתראה
+        view.alpha = 0.25f
+        view.translationY = -dp(ctx, 12f)
         view.animate()
             .alpha(1f)
             .translationY(0f)
-            .setDuration(ANIM_MS)
+            .setDuration(APPEAR_MS)
             .setInterpolator(DecelerateInterpolator())
             .start()
         return view
@@ -282,8 +308,7 @@ object OverlayManager {
         if (from == null || from < 0 || from >= target) return
         totalView.text = Money.format(from, info.homeCurrency)
         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = COUNT_UP_MS
-            startDelay = ANIM_MS
+            duration = COUNT_UP_MS // מתחיל מיד, יחד עם ההופעה
             interpolator = DecelerateInterpolator()
             addUpdateListener {
                 val fraction = it.animatedValue as Float
@@ -396,6 +421,7 @@ object OverlayManager {
         root = null
         try {
             windowManager?.removeViewImmediate(view)
+            spare = view // נשמרת לתשלום הבא, כדי לא לבנות אותה מחדש
         } catch (ignored: IllegalArgumentException) {
             // החלון כבר הוסר
         }
@@ -409,7 +435,6 @@ object OverlayManager {
             PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.05f, 1f, 1.05f, 1f),
         ).apply {
             duration = 700
-            startDelay = ANIM_MS
             start()
         }
     }

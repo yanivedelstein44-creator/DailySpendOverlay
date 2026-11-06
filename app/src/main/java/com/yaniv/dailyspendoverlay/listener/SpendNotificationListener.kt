@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -57,7 +58,22 @@ class SpendNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         registerUnlockReceiver()
+        warmUp()
         catchUpMissed()
+    }
+
+    /**
+     * הכנה מראש, פעם אחת בכל חיבור: ה-Regex, ההגדרות והחלונית עצמה.
+     * כך בתשלום הבא נשאר רק לזהות את הסכום ולהציג – והבועה מופיעה מהר יותר אחרי ההתראה.
+     */
+    private fun warmUp() {
+        try {
+            AmountParser.parse("₪1")
+            SpendStore.get(this).rules()
+            OverlayManager.warmUp(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "warm-up failed", t)
+        }
     }
 
     /**
@@ -182,7 +198,9 @@ class SpendNotificationListener : NotificationListenerService() {
         if ((notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
 
         val store = SpendStore.get(this)
-        val lateText = DeviceEvents.lateText(System.currentTimeMillis() - sbn.postTime)
+        val startedAt = SystemClock.uptimeMillis()
+        val arrivedAfterMs = System.currentTimeMillis() - sbn.postTime
+        val lateText = DeviceEvents.lateText(arrivedAfterMs)
         val content = NotificationText.extract(notification)
         val listed = store.rules().matches(pkg, content.title)
         if (!listed && pkg in PRIVATE_APPS) return
@@ -265,7 +283,7 @@ class SpendNotificationListener : NotificationListenerService() {
         when (val result = store.registerTransaction(amount, conversion.homeMinor, fingerprint)) {
             is LedgerResult.Counted -> {
                 val total = result.state.totalMinor
-                val shown = if (catchUp) getString(R.string.diag_catch_up) else announce(
+                val announced = if (catchUp) null else announce(
                     OverlayInfo(
                         lastTx = amount,
                         lastTxHomeMinor = if (amount.currency != home) conversion.homeMinor else null,
@@ -280,11 +298,16 @@ class SpendNotificationListener : NotificationListenerService() {
                         previousTotalMinor = result.previousTotalMinor,
                     )
                 )
-                // ביומן רואים מה קרה עם החלונית (והאם ההתראה הגיעה לאפליקציה באיחור) – כדי לאבחן בלי ניחושים
+                val shownInMs = SystemClock.uptimeMillis() - startedAt
+                // ביומן רואים מה קרה עם החלונית, תוך כמה זמן ההתראה הגיעה לאפליקציה ותוך כמה הבועה הוצגה
                 val detail = listOfNotNull(
                     parsed.installments?.let { "$it תשלומים" },
-                    shown,
-                    lateText?.let { getString(R.string.diag_late, it) },
+                    announced?.text ?: getString(R.string.diag_catch_up),
+                    lateText?.let { getString(R.string.diag_late, it) }
+                        ?: getString(R.string.diag_arrived, DeviceEvents.secondsText(arrivedAfterMs)),
+                    if (announced?.overlayShown == true) {
+                        getString(R.string.diag_shown_in, DeviceEvents.secondsText(shownInMs))
+                    } else null,
                 ).joinToString(" · ")
                 log(DetectionStatus.COUNTED, detail)
             }
@@ -297,15 +320,15 @@ class SpendNotificationListener : NotificationListenerService() {
      * תשלום זוהה.
      *  • טלפון פתוח → חלונית צפה.
      *  • טלפון נעול / מסך כבוי → התראה קצרה במסך הנעילה, והחלונית תופיע כשפותחים את הנעילה.
-     * מחזיר טקסט קצר לאבחון ביומן.
+     * מחזיר טקסט קצר לאבחון ביומן, והאם החלונית הוצגה עכשיו.
      */
-    private fun announce(info: OverlayInfo): String {
+    private fun announce(info: OverlayInfo): Announced {
         val store = SpendStore.get(this)
         return when (OverlayManager.show(this, info)) {
-            ShowResult.SHOWN -> getString(R.string.diag_overlay_ok)
-            ShowResult.NO_PERMISSION -> getString(R.string.diag_overlay_no_permission)
-            ShowResult.FAILED -> getString(R.string.diag_overlay_failed)
-            ShowResult.DEFERRED -> {
+            ShowResult.SHOWN -> Announced(getString(R.string.diag_overlay_ok), overlayShown = true)
+            ShowResult.NO_PERMISSION -> Announced(getString(R.string.diag_overlay_no_permission))
+            ShowResult.FAILED -> Announced(getString(R.string.diag_overlay_failed))
+            ShowResult.DEFERRED -> Announced(
                 if (!store.showOnLockScreen) {
                     getString(R.string.diag_overlay_locked_off)
                 } else {
@@ -319,9 +342,11 @@ class SpendNotificationListener : NotificationListenerService() {
                     }
                     listOfNotNull(getString(R.string.diag_overlay_deferred), lock).joinToString(" · ")
                 }
-            }
+            )
         }
     }
+
+    private class Announced(val text: String, val overlayShown: Boolean = false)
 
     /** שם האפליקציה ששלחה את ההתראה (ליומן בלבד) */
     @Suppress("DEPRECATION")

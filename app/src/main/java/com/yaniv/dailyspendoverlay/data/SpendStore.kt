@@ -1,6 +1,5 @@
 package com.yaniv.dailyspendoverlay.data
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.telephony.TelephonyManager
@@ -140,7 +139,6 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         )
     }
 
-    @SuppressLint("ApplySharedPref") // commit מכוון: הסכום נשמר לדיסק לפני שהחלונית מוצגת
     @Synchronized
     private fun saveState(state: LedgerState) {
         val editor = preferences.edit()
@@ -156,7 +154,9 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         } else {
             editor.putLong(KEY_LAST_TX_MINOR, last.minor).putString(KEY_LAST_TX_CURRENCY, last.currency)
         }
-        editor.commit() // סינכרוני: הסכום נשמר לדיסק לפני שהחלונית מוצגת
+        // apply: הערכים מתעדכנים בזיכרון מיד (כל קריאה רואה אותם), והכתיבה לדיסק ברקע –
+        // כך החלונית לא מחכה לדיסק. אם התהליך ייסגר לפני הכתיבה, ההשלמה בחיבור מחדש תספור שוב.
+        editor.apply()
     }
 
     /**
