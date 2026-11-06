@@ -41,11 +41,13 @@ tap_text() { # tap the center of the first view whose text contains $1
   XY=$(python3 - "$1" "$OUT/ui-tap.xml" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
 needle, path = sys.argv[1], sys.argv[2]
-for n in ET.parse(path).iter('node'):
-    if needle in (n.get('text') or ''):
-        x1, y1, x2, y2 = map(int, re.findall(r'\d+', n.get('bounds')))
-        print((x1 + x2) // 2, (y1 + y2) // 2)
-        break
+nodes = list(ET.parse(path).iter('node'))
+# קודם התאמה מדויקת (כפתור "כן" ולא "לעדכן", "Allow" ולא "Allowing ..."), ורק אחר כך חלקית
+exact = [n for n in nodes if (n.get('text') or '').strip() == needle]
+partial = [n for n in nodes if needle in (n.get('text') or '')]
+for n in (exact or partial)[:1]:
+    x1, y1, x2, y2 = map(int, re.findall(r'\d+', n.get('bounds')))
+    print((x1 + x2) // 2, (y1 + y2) // 2)
 PY
 )
   echo "tap '$1' at [$XY]" >> "$LOG"
@@ -177,10 +179,15 @@ pay p6 12.00 "While-Frozen"
 sleep 4; shot 26-frozen-after-pay
 adb shell am unfreeze --sticky $PKG >> "$LOG" 2>&1
 sleep 0.8; shot 27-after-unfreeze-0.8s
-sleep 5
-adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 3
+adb shell dumpsys window windows | grep -iE "Window\{.*dailyspend" >> "$LOG" 2>&1
+sleep 2; shot 27b-after-unfreeze-2.8s
+sleep 4
+adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 0.8; shot 28a-app-open-0.8s; ui_texts 28a-app-open-0.8s
+sleep 3
 for i in 1 2 3 4 5 6 7 8; do adb shell input swipe 540 1900 540 500 250; sleep 0.5; done
 shot 28-log-after-unfreeze; ui_texts 28-log-after-unfreeze
+adb shell input swipe 540 700 540 1500 300; sleep 1; shot 28b-log-top; ui_texts 28b-log-top
+adb shell input swipe 540 700 540 1500 300; sleep 1; shot 28c-log-top2; ui_texts 28c-log-top2
 
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1
