@@ -85,7 +85,8 @@ shot 00-home
 pay p1 45.90 "Super-Pharm"
 sleep 0.7; shot 01-unlocked-bubble-0.7s
 sleep 1.5; shot 02-unlocked-bubble-2.2s
-sleep 4; shot 03-unlocked-after-6s
+sleep 1.8; shot 02b-unlocked-bubble-4s
+sleep 4.5; shot 03-unlocked-after-8.5s
 
 step "2. phone locked (screen off): payment -> bubble over the lock screen"
 adb shell input keyevent KEYCODE_SLEEP; sleep 6; state locked-before-pay

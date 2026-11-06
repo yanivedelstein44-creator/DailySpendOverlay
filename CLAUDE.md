@@ -7,7 +7,7 @@
    - קוד רשת קיים רק ב-`net/OnlineGateway.kt`, והוא בודק הסכמה לכל מטרה (`OnlinePurpose`).
    - אין להוסיף מטרות רשת חדשות בלי שהמשתמש ביקש במפורש.
 2. **סוללה:** אין שירותי רקע, WakeLock, טיימרים או רענון מחזורי. כל עבודה מתבצעת רק בתגובה להתראה (`SpendNotificationListener`), לשחרור נעילה, או כשהמסך פתוח.
-   - ההתראה במסך הנעילה (`LockScreenNotifier`) נעלמת דרך `setTimeoutAfter` של המערכת, לא דרך טיימר באפליקציה. הטיימר של 4 השניות בבועה שמעל הנעילה רץ רק כשהיא גלויה.
+   - ההתראה במסך הנעילה (`LockScreenNotifier`) נעלמת דרך `setTimeoutAfter` של המערכת, לא דרך טיימר באפליקציה. הטיימר של 6 השניות בבועה שמעל הנעילה רץ רק כשהיא גלויה.
    - מותר לבקש פטור מחיסכון בסוללה (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`). זה רק מונע מהטלפון להקפיא את קליטת ההתראות, ולא מוסיף עבודה ברקע. בסמסונג הפטור ("ללא הגבלה") כבר כולל את "אף פעם לא במצב שינה", ואפליקציה עם פטור לא מופיעה ברשימה ההיא – לכן אין כפתור לרשימה של סמסונג.
 3. **חתימה:** תמיד `keystore/dailyspend.jks`, עם alias `dailyspend`.
    - אסור ליצור מפתח חדש, כי זה ישבור עדכונים למשתמשים קיימים.
@@ -27,8 +27,8 @@
   - `Currencies`, `FxRates`, `SourceRules`, `DetectionLog`.
 - `data/SpendStore` – SharedPreferences. שמירת הסכום ב-`apply` (בזיכרון מיד, לדיסק ברקע), כדי שהבועה לא תחכה לדיסק.
 - `listener/` – קליטת התראות. בכל חיבור מחדש (`onListenerConnected`) יש השלמה חד-פעמית: תשלומים מהשעה האחרונה שעדיין מוצגים ולא טופלו נספרים בלי חלונית (`DeviceEvents.isCatchUpCandidate`, טביעות ב-`SpendStore.isKnownFingerprint`). באותו חיבור גם מכינים מראש את ה-Regex והחלונית (`warmUp`), כדי שהבועה תופיע מהר אחרי ההתראה. ביומן: "הגיע תוך X שנ׳" (מההתראה לאפליקציה) ו"הוצג תוך Y שנ׳" (עד שהבועה הוצגה).
-- `overlay/OverlayManager` – החלונית, 4 שניות, כחול/אדום. נבנית מראש ונשמרת לשימוש חוזר (`spare`); הופעה של 120ms והסכום "רץ" מיד.
-- `overlay/LockScreenNotifier` + `overlay/LockScreenBubbleActivity` – כשהטלפון נעול או המסך כבוי: "התראה במסך מלא" שמציגה את הבועה מעל מסך הנעילה ל-4 שניות (או התראה רגילה בלי אישור). החלונית מופיעה שוב בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
+- `overlay/OverlayManager` – החלונית, 6 שניות, כחול/אדום. נבנית מראש ונשמרת לשימוש חוזר (`spare`); הופעה של 120ms והסכום "רץ" מיד.
+- `overlay/LockScreenNotifier` + `overlay/LockScreenBubbleActivity` – כשהטלפון נעול או המסך כבוי: "התראה במסך מלא" שמציגה את הבועה מעל מסך הנעילה ל-6 שניות (או התראה רגילה בלי אישור). החלונית מופיעה שוב בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
 - `core/ResetUndo` – גיבוי לפני "איפוס היום" ושחזור עד סוף היום. `core/LogReplay` – שחזור מהיומן כשאין גיבוי.
 - בדיקת אמולטור: `.github/workflows/emulator-test.yml` (ידני) מריץ את `.github/emulator-test.sh` ודוחף צילומי מסך ולוגים לענף `emulator-results`.
 - `update/` – עדכון עצמי דרך PackageInstaller (GitHub Releases או קובץ).
