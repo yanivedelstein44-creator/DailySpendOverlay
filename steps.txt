@@ -1,0 +1,190 @@
+=== install + permissions
+14
+Performing Streamed Install
+Success
+/tmp/daily_spend.xml: 1 file pushed, 0 skipped. 4.0 MB/s (384 bytes in 0.000s)
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <string name="source_rules">com.android.shell</string>
+    <string name="home_currency">ILS</string>
+    <string name="consent_updates">no</string>
+    <string name="consent_fx">no</string>
+    <boolean name="asked_notification_permission" value="true" />
+    <boolean name="stay_until_swipe" value="false" />
+</map>
+      com.google.android.as/com.google.android.apps.miphone.aiai.common.notification.service.AiAiNotificationListenerService:com.google.android.apps.nexuslauncher/com.android.launcher3.notification.NotificationListener:com.yaniv.dailyspendoverlay/com.yaniv.dailyspendoverlay.listener.SpendNotificationListener (user: 0 isPrimary: true)
+      userId=0 value={com.google.android.as/com.google.android.apps.miphone.aiai.common.notification.service.AiAiNotificationListenerService, com.google.android.apps.nexuslauncher/com.android.launcher3.notification.NotificationListener, com.yaniv.dailyspendoverlay/com.yaniv.dailyspendoverlay.listener.SpendNotificationListener}
+      ComponentInfo{com.yaniv.dailyspendoverlay/com.yaniv.dailyspendoverlay.listener.SpendNotificationListener}
+      ComponentInfo{com.yaniv.dailyspendoverlay/com.yaniv.dailyspendoverlay.listener.SpendNotificationListener} (user 0): android.service.notification.INotificationListener$Stub$Proxy@451b6
+      userId=0 value={com.google.android.apps.diagnosticstool, com.google.android.as/com.google.android.apps.miphone.aiai.common.notification.service.AiAiNotificationAssistantService, com.google.android.as/com.google.android.apps.miphone.aiai.common.notification.service.AiAiNotificationListenerService, com.google.android.apps.safetyhub, com.google.intelligence.sense, com.google.android.apps.nexuslauncher/com.android.launcher3.notification.NotificationListener, com.google.android.apps.wellbeing, com.google.android.dialer, com.google.android.gms, com.yaniv.dailyspendoverlay/com.yaniv.dailyspendoverlay.listener.SpendNotificationListener, com.google.android.settings.intelligence, com.google.android.GoogleCamera}
+=== 1. phone unlocked: payment -> bubble
+shot 00-home
+pay p1 45.90 Super-Pharm
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 01-unlocked-bubble-0.7s
+shot 02-unlocked-bubble-2.2s
+shot 02b-unlocked-bubble-4s
+shot 03-unlocked-after-8.5s
+=== 2. phone locked (screen off): payment -> bubble over the lock screen
+--- state: locked-before-pay
+  mWakefulness=Asleep
+    mShowingDream=false mDreamingLockscreen=false
+    isKeyguardShowing=false
+pay p2 70.10 Shufersal
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 04-locked-bubble-2s
+--- state: locked-after-pay
+  mWakefulness=Awake
+    mShowingDream=false mDreamingLockscreen=false
+    isKeyguardShowing=false
+    topResumedActivity=ActivityRecord{432e71e u0 com.yaniv.dailyspendoverlay/.overlay.LockScreenBubbleActivity t8}
+shot 05-locked-after-7s
+--- state: locked-after-7s
+  mWakefulness=Awake
+    mShowingDream=false mDreamingLockscreen=false
+    isKeyguardShowing=false
+      topResumedActivity=ActivityRecord{d8dac u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+=== 3. unlock right after -> no repeat (seen <15s ago)
+shot 06-unlock-after-lock-bubble
+=== 4. no full-screen permission: locked payment -> notification, bubble at unlock
+pay p3 13.90 Cafe
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 07-locked-no-fsi-screen-off
+--- state: no-fsi-after-pay
+  mWakefulness=Awake
+    mShowingDream=false mDreamingLockscreen=false
+    isKeyguardShowing=false
+    topResumedActivity=ActivityRecord{4cf2750 u0 com.yaniv.dailyspendoverlay/.overlay.LockScreenBubbleActivity t9}
+shot 08-lockscreen-notification
+shot 09-bubble-after-unlock
+=== 5. app: today total + log diagnostics
+Starting: Intent { cmp=com.yaniv.dailyspendoverlay/.MainActivity }
+shot 10-app-top
+shot 11-app-bottom
+=== 6. reset + restore
+tap 'איפוס היום' at [540 962]
+shot 12-reset-confirm
+tap 'כן' at [894 1313]
+shot 13-after-reset
+tap 'שחזר' at [540 1099]
+shot 14-after-restore
+=== 7. real lock screen with a PIN (like a real phone): payment while locked -> bubble over the lock screen
+Pin set to '1111'
+--- state: pin-locked-before-pay
+  mWakefulness=Asleep
+    mShowingDream=false mDreamingLockscreen=true
+    isKeyguardShowing=true
+pay p4 22.50 Aroma
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 15-pin-locked-bubble-2s
+--- state: pin-locked-after-pay
+  mWakefulness=Awake
+    mShowingDream=false mDreamingLockscreen=false
+    isKeyguardShowing=true
+    topResumedActivity=ActivityRecord{71e997 u0 com.yaniv.dailyspendoverlay/.overlay.LockScreenBubbleActivity t11}
+shot 16-pin-lockscreen-after-7s
+--- state: pin-locked-after-7s
+  mWakefulness=Awake
+    mShowingDream=false mDreamingLockscreen=true
+    isKeyguardShowing=true
+=== 8. unlock with the PIN later -> the bubble shows again
+shot 17-after-pin-unlock
+--- state: after-pin-unlock
+  mWakefulness=Awake
+    mShowingDream=false mDreamingLockscreen=false
+    isKeyguardShowing=false
+    topResumedActivity=ActivityRecord{97facd1 u0 com.yaniv.dailyspendoverlay/.MainActivity t10}
+--------- beginning of main
+11-07 12:43:22.642  2637  2637 I DailySpend: unlock: pending=true show=false
+11-07 12:43:43.349  2637  2637 I DailySpend: unlock: pending=true show=false
+11-07 12:45:14.601  2637  2637 I DailySpend: unlock: pending=true show=true
+Lock credential cleared
+=== 9. reset done in an old version (no backup) -> restore from the log
+tap 'איפוס היום' at [540 962]
+tap 'כן' at [894 1313]
+Starting: Intent { cmp=com.yaniv.dailyspendoverlay/.MainActivity }
+shot 18-restore-from-log-button
+tap 'מהיומן' at [540 1099]
+shot 19-restore-from-log-confirm
+tap 'כן' at [894 1394]
+shot 20-after-restore-from-log
+=== 10. listener stopped (like Samsung sleeping apps) -> payment -> listener back -> counted once
+pay p5 33.30 Missed-While-Asleep
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+Starting: Intent { cmp=com.yaniv.dailyspendoverlay/.MainActivity }
+Warning: Activity not started, its current task has been brought to the front
+shot 21-after-catch-up-top
+shot 22-after-catch-up-log
+=== 11. battery: status row + the system dialog
+shot 23-permissions-card
+tap 'אשר ריצה ברקע' at [540 1011]
+shot 24-battery-dialog
+tap 'Allow' at [894 1424]
+shot 25-after-allow
+user,com.yaniv.dailyspendoverlay,10192
+=== 12. experiment: process frozen (like Samsung) -> payment -> unfreeze
+Freezing pid: 6660 sticky=true
+pay p6 12.00 While-Frozen
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 26-frozen-after-pay
+Unfreezing pid: 6660
+shot 27-after-unfreeze-0.8s
+  Window #11 Window{987076f u0 com.yaniv.dailyspendoverlay/com.yaniv.dailyspendoverlay.MainActivity}:
+shot 27b-after-unfreeze-2.8s
+Starting: Intent { cmp=com.yaniv.dailyspendoverlay/.MainActivity }
+Warning: Activity not started, its current task has been brought to the front
+shot 28a-app-open-0.8s
+shot 28-log-after-unfreeze
+shot 28b-log-top
+shot 28c-log-top2
+=== 13. bills: euro and dollar payments
+payraw p9 Cafe Paris €37.80
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 30-euro-bills
+payraw p10 NY Deli $42.65
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 31-dollar-bills
+=== 14. wallet: daily budget 1000 ₪ -> what is left; then over the budget -> empty wallet
+/tmp/prefs-edit.xml: 1 file pushed, 0 skipped. 44.3 MB/s (3070 bytes in 0.000s)
+    <long name="budget_minor" value="100000" />
+Starting: Intent { cmp=com.yaniv.dailyspendoverlay/.MainActivity }
+shot 32a-app-with-budget
+pay p11 27.43 Bakery
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 32-wallet
+pay p12 900.00 TV-Store
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 33-wallet-over
+    <long name="budget_minor" value="100000" />
+=== 15. bubble stays until swiped right (default): after 12s still there; left swipe/tap: stays; right swipe: gone; hint only until the first swipe
+/tmp/prefs-edit.xml: 1 file pushed, 0 skipped. 49.3 MB/s (3614 bytes in 0.000s)
+    <boolean name="stay_until_swipe" value="true" />
+Starting: Intent { cmp=com.yaniv.dailyspendoverlay/.MainActivity }
+pay p13 12.90 Kiosk
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 34-stays-after-12s
+bubble windows [34-after-12s]: 1 (lines mentioning it: 3)
+shot 35-after-left-swipe
+bubble windows [35-after-left-swipe]: 1 (lines mentioning it: 3)
+shot 36-after-right-swipe
+bubble windows [36-after-right-swipe]: 0 (lines mentioning it: 0)
+pay p14 8.50 Coffee
+posting:
+  Notification(channel=shell_cmd shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x0 color=0x00000000 vis=PRIVATE)
+shot 37-next-bubble-no-hint
+bubble windows [37-next-bubble]: 1 (lines mentioning it: 3)
+bubble windows [37b-after-tap]: 1 (lines mentioning it: 3)
+shot 38-after-second-swipe
+bubble windows [38-after-second-swipe]: 0 (lines mentioning it: 0)
+/system/bin/sh: swipe_hint_seen: inaccessible or not found

@@ -1,0 +1,4 @@
+--------- beginning of main
+11-07 12:43:22.642  2637  2637 I DailySpend: unlock: pending=true show=false
+11-07 12:43:43.349  2637  2637 I DailySpend: unlock: pending=true show=false
+11-07 12:45:14.601  2637  2637 I DailySpend: unlock: pending=true show=true
