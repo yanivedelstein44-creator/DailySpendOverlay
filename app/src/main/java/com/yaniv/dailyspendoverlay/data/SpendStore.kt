@@ -66,6 +66,8 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         private const val KEY_LOG_UNLISTED = "log_unlisted"
         private const val KEY_SOURCE_PREFIX = "source_on_"
         private const val KEY_SHOW_CASH = "show_cash_breakdown"
+        private const val KEY_STAY_UNTIL_SWIPE = "stay_until_swipe"
+        private const val KEY_SWIPE_HINT_SEEN = "swipe_hint_seen"
         private const val KEY_LOCK_SCREEN = "show_on_lock_screen"
         private const val KEY_PENDING_UNLOCK = "pending_unlock_millis"
         private const val KEY_UNDO_DAY = "reset_undo_day"
@@ -221,6 +223,23 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_SHOW_CASH, true)
         set(value) {
             preferences.edit().putBoolean(KEY_SHOW_CASH, value).apply()
+        }
+
+    /**
+     * בועת תשלום נשארת על המסך עד שמחליקים אותה ימינה. דלוק כברירת מחדל.
+     * כבוי = נעלמת לבד אחרי 7 שניות (כמו בגרסאות הקודמות).
+     */
+    var stayUntilSwipe: Boolean
+        get() = preferences.getBoolean(KEY_STAY_UNTIL_SWIPE, true)
+        set(value) {
+            preferences.edit().putBoolean(KEY_STAY_UNTIL_SWIPE, value).apply()
+        }
+
+    /** כבר החליקו בועה פעם אחת – לא צריך יותר את הרמז "החלק ימינה לסגירה" */
+    var swipeHintSeen: Boolean
+        get() = preferences.getBoolean(KEY_SWIPE_HINT_SEEN, false)
+        set(value) {
+            preferences.edit().putBoolean(KEY_SWIPE_HINT_SEEN, value).apply()
         }
 
     /** גודל החלונית: false = כרטיס (ברירת מחדל), true = מסך מלא – רק אם המשתמש הדליק את המתג */

@@ -144,5 +144,18 @@
             android:textDirection="rtl"
             android:textSize="14sp"
             android:visibility="gone" />
+
+        <!-- רמז עד ההחלקה הראשונה (רק כשהבועה נשארת עד שמחליקים אותה) -->
+        <TextView
+            android:id="@+id/overlayHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="@string/overlay_swipe_hint"
+            android:textColor="#B3FFFFFF"
+            android:textDirection="rtl"
+            android:textSize="13sp"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

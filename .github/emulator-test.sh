@@ -3,6 +3,7 @@
 # שום כסף אמיתי: ה"תשלומים" הם התראות טקסט שנשלחות מה-shell של האמולטור.
 # מתקין את האפליקציה, נותן הרשאות, שולח תשלומים כשהטלפון פתוח / נעול, ומצלם כל שלב.
 PKG=com.yaniv.dailyspendoverlay
+LISTENER=$PKG/$PKG.listener.SpendNotificationListener
 OUT=emulator-results
 mkdir -p "$OUT"
 LOG="$OUT/steps.txt"
@@ -58,6 +59,26 @@ PY
   [ -n "$XY" ] && adb shell input tap $XY
 }
 unlock() { adb shell input keyevent KEYCODE_WAKEUP; sleep 0.5; adb shell wm dismiss-keyguard; }
+# עריכת הגדרה בקובץ של האפליקציה. קליטת ההתראות כבויה בזמן העריכה – אחרת המערכת מעירה את
+# האפליקציה 50ms אחרי force-stop, היא טוענת את ההגדרות הישנות, והשמירה הבאה דורסת את העריכה.
+# העריכה עצמה נעשית כאן ולא ב-shell של הטלפון (שם < > ומרכאות שוברים את הפקודה).
+set_pref() { # name '<xml line>'
+  adb shell cmd notification disallow_listener $LISTENER >> "$LOG" 2>&1; sleep 2
+  adb shell am force-stop $PKG; sleep 1
+  adb exec-out run-as $PKG cat shared_prefs/daily_spend.xml > /tmp/prefs-edit.xml
+  sed -i "/\"$1\"/d; s#</map>#    $2\n</map>#" /tmp/prefs-edit.xml
+  adb push /tmp/prefs-edit.xml /data/local/tmp/daily_spend.xml >> "$LOG" 2>&1
+  adb shell chmod 644 /data/local/tmp/daily_spend.xml
+  adb shell run-as $PKG cp /data/local/tmp/daily_spend.xml shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+  adb shell run-as $PKG grep "$1" shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+  adb shell cmd notification allow_listener $LISTENER >> "$LOG" 2>&1; sleep 4
+}
+overlay_windows() { # כמה חלונות של הבועה יש עכשיו על המסך → ליומן
+  local strict loose
+  strict=$(adb shell dumpsys window windows | grep -cE "Window #[0-9]+ Window\{[0-9a-f]+ u0 DailySpendOverlay\}")
+  loose=$(adb shell dumpsys window windows | grep -c "DailySpendOverlay")
+  echo "bubble windows [$1]: $strict (lines mentioning it: $loose)" | tee -a "$LOG"
+}
 
 step "install + permissions"
 adb shell getprop ro.build.version.release >> "$LOG"
@@ -70,6 +91,7 @@ cat > /tmp/daily_spend.xml <<'XML'
     <string name="consent_updates">no</string>
     <string name="consent_fx">no</string>
     <boolean name="asked_notification_permission" value="true" />
+    <boolean name="stay_until_swipe" value="false" />
 </map>
 XML
 adb push /tmp/daily_spend.xml /data/local/tmp/daily_spend.xml >> "$LOG" 2>&1
@@ -152,7 +174,6 @@ tap_text "מהיומן"; sleep 1.5; shot 19-restore-from-log-confirm; ui_texts 1
 tap_text "כן"; sleep 1.5; shot 20-after-restore-from-log; ui_texts 20-after-restore-from-log
 
 step "10. listener stopped (like Samsung sleeping apps) -> payment -> listener back -> counted once"
-LISTENER=$PKG/$PKG.listener.SpendNotificationListener
 adb shell input keyevent KEYCODE_HOME; sleep 1
 adb shell cmd notification disallow_listener $LISTENER >> "$LOG" 2>&1
 sleep 2
@@ -204,18 +225,7 @@ sleep 1.5; shot 31-dollar-bills; ui_texts 31-dollar-bills
 sleep 8
 
 step "14. wallet: daily budget 1000 ₪ -> what is left; then over the budget -> empty wallet"
-# בלי זה המערכת מעירה את האפליקציה (בשביל קליטת ההתראות) 50ms אחרי force-stop,
-# היא טוענת את ההגדרות הישנות לזיכרון, והתשלום הבא דורס את התקציב בקובץ.
-adb shell cmd notification disallow_listener $LISTENER >> "$LOG" 2>&1; sleep 2
-adb shell am force-stop $PKG; sleep 1
-# העריכה נעשית כאן ולא ב-shell של הטלפון (שם < > ומרכאות שוברים את הפקודה)
-adb exec-out run-as $PKG cat shared_prefs/daily_spend.xml > /tmp/prefs-budget.xml
-sed -i '/budget_minor/d; s#</map>#    <long name="budget_minor" value="100000" />\n</map>#' /tmp/prefs-budget.xml
-adb push /tmp/prefs-budget.xml /data/local/tmp/daily_spend.xml >> "$LOG" 2>&1
-adb shell chmod 644 /data/local/tmp/daily_spend.xml
-adb shell run-as $PKG cp /data/local/tmp/daily_spend.xml shared_prefs/daily_spend.xml >> "$LOG" 2>&1
-adb shell run-as $PKG grep budget shared_prefs/daily_spend.xml >> "$LOG" 2>&1
-adb shell cmd notification allow_listener $LISTENER >> "$LOG" 2>&1; sleep 4
+set_pref budget_minor '<long name="budget_minor" value="100000" />'
 adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 4
 shot 32a-app-with-budget; ui_texts 32a-app-with-budget
 adb shell input keyevent KEYCODE_HOME; sleep 2
@@ -226,6 +236,24 @@ pay p12 900.00 "TV-Store"
 sleep 1.5; shot 33-wallet-over; ui_texts 33-wallet-over
 sleep 8
 adb shell run-as $PKG grep budget shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+
+step "15. bubble stays until swiped right (default): after 12s still there; left swipe/tap: stays; right swipe: gone; hint only until the first swipe"
+set_pref stay_until_swipe '<boolean name="stay_until_swipe" value="true" />'
+adb shell am start -n $PKG/.MainActivity >> "$LOG" 2>&1; sleep 3
+adb shell input keyevent KEYCODE_HOME; sleep 2
+pay p13 12.90 "Kiosk"
+sleep 12; shot 34-stays-after-12s; overlay_windows 34-after-12s
+adb shell input swipe 700 700 250 700 250
+sleep 1.5; shot 35-after-left-swipe; overlay_windows 35-after-left-swipe
+adb shell input swipe 250 700 950 700 200
+sleep 1.5; shot 36-after-right-swipe; overlay_windows 36-after-right-swipe
+pay p14 8.50 "Coffee"
+sleep 2; shot 37-next-bubble-no-hint; overlay_windows 37-next-bubble
+adb shell input tap 540 700
+sleep 1.5; overlay_windows 37b-after-tap
+adb shell input swipe 250 700 950 700 200
+sleep 1.5; shot 38-after-second-swipe; overlay_windows 38-after-second-swipe
+adb shell run-as $PKG grep -E "stay_until_swipe|swipe_hint_seen" shared_prefs/daily_spend.xml >> "$LOG" 2>&1
 
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1

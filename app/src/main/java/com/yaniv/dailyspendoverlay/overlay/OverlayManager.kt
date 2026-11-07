@@ -23,6 +23,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -81,12 +82,14 @@ enum class ShowResult {
 /**
  * החלונית הצפה.
  *  • מוצגת מעל כל האפליקציות (TYPE_APPLICATION_OVERLAY, דורש SYSTEM_ALERT_WINDOW).
- *  • לא לוקחת פוקוס ולא דורשת שום פעולה – נעלמת לבד אחרי 7 שניות (או מיד בנגיעה בה).
+ *  • לא לוקחת פוקוס. בועה של תשלום נשארת על המסך עד שמחליקים אותה ימינה (SwipeTouch;
+ *    מתג stayUntilSwipe, דלוק כברירת מחדל) – בלי טיימר בכלל. כשהמתג כבוי, וגם בסיכום של פתיחת
+ *    הטלפון: נעלמת לבד אחרי 7 שניות, או מיד בנגיעה.
  *  • אטומה לגמרי: חלונית שאי אפשר לגעת בה מקבלת מהמערכת 20% שקיפות, ולכן היא כן ניתנת לנגיעה.
  *  • כחול רגוע כל עוד הסכום היומי לא עבר את התקציב; אדום בולט (עם מסגרת לבנה) מעל התקציב.
- *  • אם מגיעה עסקה נוספת בזמן שהחלונית מוצגת – התוכן מתעדכן והטיימר מתחיל מחדש.
+ *  • אם מגיעה עסקה נוספת בזמן שהחלונית מוצגת – התוכן מתעדכן (והטיימר, אם יש, מתחיל מחדש).
  *
- * (StaticFieldLeak: נשמר רק Context של האפליקציה/החלון – לא Activity – והחלונית משוחררת אחרי 7 שניות.)
+ * (StaticFieldLeak: נשמר רק Context של האפליקציה/החלון – לא Activity – והחלונית משוחררת כשהיא נסגרת.)
  */
 @SuppressLint("StaticFieldLeak")
 object OverlayManager {
@@ -104,7 +107,29 @@ object OverlayManager {
     private var windowManager: WindowManager? = null
     private var root: View? = null
     private var attachedFull = false
+    /** הבועה המוצגת מחכה להחלקה (בלי טיימר) */
+    private var currentSticky = false
     private val hideRunnable = Runnable { hide() }
+
+    private val swipeListener = object : SwipeTouch.Listener {
+        override fun onTouchStart(view: View) {
+            main.removeCallbacks(hideRunnable) // לא נעלמת לבד באמצע גרירה
+        }
+
+        override fun onSettled(view: View) {
+            // בלי "להישאר עד החלקה": אחרי שעוזבים אותה – עוד 7 שניות
+            if (root === view && !currentSticky) {
+                main.removeCallbacks(hideRunnable)
+                main.postDelayed(hideRunnable, VISIBLE_MS)
+            }
+        }
+
+        override fun onSwipedAway(view: View) {
+            main.removeCallbacks(hideRunnable)
+            if (root === view && currentSticky) SpendStore.get(view.context).swipeHintSeen = true
+            removeNow(view)
+        }
+    }
 
     /** חלונית בנויה מראש (ב-warmUp, או זו שהוצגה בפעם הקודמת) – ברגע התשלום נשאר רק למלא ולהציג */
     private var spare: View? = null
@@ -137,7 +162,13 @@ object OverlayManager {
             return ShowResult.NO_PERMISSION
         }
         try {
-            val full = SpendStore.get(app).overlayFull
+            val store = SpendStore.get(app)
+            // תשלום (ותצוגה מקדימה) נשאר עד החלקה; הסיכום בפתיחת הטלפון – 7 שניות כמו קודם
+            val sticky = store.stayUntilSwipe && info.lastTx != null
+            if (info.lastTx == null && root != null && currentSticky) {
+                return ShowResult.SHOWN // בועת תשלום עוד מחכה להחלקה, והיא כבר מראה את הסכום היומי
+            }
+            val full = store.overlayFull
             var existing = root
             if (existing != null && attachedFull != full) {
                 // המשתמש החליף בין כרטיס למסך מלא בזמן שהחלונית מוצגת – בונים מחדש
@@ -148,14 +179,16 @@ object OverlayManager {
             val view = if (existing != null) {
                 existing.animate().cancel()
                 existing.alpha = 1f
+                existing.translationX = 0f
                 existing.translationY = 0f
                 existing
             } else {
                 createAndAttach(app, full)
             }
-            bind(view, info)
+            currentSticky = sticky
+            bindCard(view, info, attachedFull, swipeHint = sticky && !store.swipeHintSeen)
             main.removeCallbacks(hideRunnable)
-            main.postDelayed(hideRunnable, VISIBLE_MS)
+            if (!sticky) main.postDelayed(hideRunnable, VISIBLE_MS)
             return ShowResult.SHOWN
         } catch (e: RuntimeException) {
             // BadTokenException / SecurityException – למשל אם ההרשאה בוטלה בזמן ריצה
@@ -182,7 +215,12 @@ object OverlayManager {
         val view = spare?.takeIf { it.parent == null } ?: inflate(ctx)
         spare = null
         view.animate().cancel()
-        view.setOnClickListener { dismissNow() } // נגיעה בחלונית סוגרת אותה מיד
+        view.setOnTouchListener(SwipeTouch(swipeListener)) // החלקה ימינה סוגרת
+        view.setOnClickListener {
+            // נגיעה רגילה סוגרת רק בועה שלא מחכה להחלקה. עם קורא מסך אין החלקה – שם נגיעה תמיד סוגרת
+            if (!currentSticky || touchExploration(app)) dismissNow()
+        }
+        view.translationX = 0f // אחרי החלקה היא נשמרה בצד, מחוץ למסך
         wm.addView(view, buildParams(ctx, full))
         windowManager = wm
         root = view
@@ -245,10 +283,14 @@ object OverlayManager {
         }
     }
 
-    private fun bind(view: View, info: OverlayInfo) = bindCard(view, info, attachedFull)
+    private fun touchExploration(ctx: Context): Boolean =
+        ctx.getSystemService(AccessibilityManager::class.java)?.isTouchExplorationEnabled == true
 
-    /** ממלא את הכרטיס (layout/overlay_spend). משמש גם את הבועה שמעל מסך הנעילה */
-    fun bindCard(view: View, info: OverlayInfo, full: Boolean) {
+    /**
+     * ממלא את הכרטיס (layout/overlay_spend). משמש גם את הבועה שמעל מסך הנעילה.
+     * @param swipeHint "→ החלק ימינה לסגירה" בתחתית – רק עד ההחלקה הראשונה
+     */
+    fun bindCard(view: View, info: OverlayInfo, full: Boolean, swipeHint: Boolean = false) {
         val ctx = view.context
         val status = BudgetStatus(info.totalMinor, info.budgetMinor)
         val card = view.findViewById<LinearLayout>(R.id.overlayCard)
@@ -324,6 +366,8 @@ object OverlayManager {
         if (status.hasBudget) budgetView.text = budgetLine(ctx, status, info.homeCurrency)
 
         bindWallet(view, info, status, walletMode, full)
+
+        view.findViewById<TextView>(R.id.overlayHint).visibility = if (swipeHint) View.VISIBLE else View.GONE
 
         if (status.isOver && info.justCrossed) pulse(card) else popIn(card)
     }
@@ -487,6 +531,7 @@ object OverlayManager {
     private fun removeNow(view: View) {
         if (root !== view) return
         root = null
+        currentSticky = false
         try {
             windowManager?.removeViewImmediate(view)
             spare = view // נשמרת לתשלום הבא, כדי לא לבנות אותה מחדש

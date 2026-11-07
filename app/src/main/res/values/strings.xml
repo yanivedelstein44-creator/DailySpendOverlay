@@ -63,6 +63,8 @@
     <string name="overlay_wallet_over">חרגת ב-%1$s מהתקציב היומי</string>
     <string name="overlay_wallet_spent">יצאו היום %1$s מתוך %2$s</string>
     <string name="appearance_cash_switch">להציג את התשלום כשטרות ומטבעות (שקל, יורו ודולר)</string>
+    <string name="appearance_stay_switch">הבועה נשארת על המסך עד שמחליקים אותה ימינה (כבוי: נעלמת לבד אחרי 7 שניות)</string>
+    <string name="overlay_swipe_hint">→ החלק ימינה לסגירה</string>
     <string name="overlay_today_label">הוצאת היום</string>
     <string name="overlay_remaining">נשארו %1$s מתוך %2$s</string>
     <string name="overlay_over_by">חריגה של %1$s מעל התקציב (%2$s)</string>
@@ -119,7 +121,7 @@
     <string name="appearance_color_label">צבע</string>
     <string name="appearance_brightness">בהירות: %1$d%%</string>
     <string name="appearance_full_switch">חלונית במסך מלא (במקום כרטיס)</string>
-    <string name="appearance_note">הצבע והבהירות חלים על החלונית. אם הגדרת תקציב, חריגה ממנו תמיד מוצגת באדום בולט, בלי קשר לבהירות. נגיעה בחלונית סוגרת אותה.</string>
+    <string name="appearance_note">הצבע והבהירות חלים על החלונית. אם הגדרת תקציב, חריגה ממנו תמיד מוצגת באדום בולט, בלי קשר לבהירות. החלקה ימינה סוגרת את החלונית; כשהיא לא נשארת על המסך – גם נגיעה בה.</string>
     <string name="appearance_color_selected">%1$s (נבחר)</string>
 
     <!-- מקורות -->

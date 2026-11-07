@@ -97,6 +97,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
     private lateinit var seekBrightness: SeekBar
     private lateinit var swOverlayFull: Switch
     private lateinit var swCashBills: Switch
+    private lateinit var swStayUntilSwipe: Switch
     private lateinit var swOnUnlock: Switch
     private lateinit var swLogUnlisted: Switch
     private lateinit var sourceSwitches: LinearLayout
@@ -247,6 +248,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         seekBrightness = findViewById(R.id.seekBrightness)
         swOverlayFull = findViewById(R.id.swOverlayFull)
         swCashBills = findViewById(R.id.swCashBills)
+        swStayUntilSwipe = findViewById(R.id.swStayUntilSwipe)
         swOnUnlock = findViewById(R.id.swOnUnlock)
         swLogUnlisted = findViewById(R.id.swLogUnlisted)
         sourceSwitches = findViewById(R.id.sourceSwitches)
@@ -560,6 +562,9 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         swCashBills.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.showCashBreakdown = checked
         }
+        swStayUntilSwipe.setOnCheckedChangeListener { _, checked ->
+            if (!suppressSwitchCallbacks) store.stayUntilSwipe = checked
+        }
         swOverlayFull.setOnCheckedChangeListener { _, checked ->
             if (!suppressSwitchCallbacks) store.overlayFull = checked
         }
@@ -599,6 +604,7 @@ class MainActivity : Activity(), SharedPreferences.OnSharedPreferenceChangeListe
         suppressSwitchCallbacks = true
         swOverlayFull.isChecked = store.overlayFull
         swCashBills.isChecked = store.showCashBreakdown
+        swStayUntilSwipe.isChecked = store.stayUntilSwipe
         swOnUnlock.isChecked = store.showOnUnlock
         swLogUnlisted.isChecked = store.logUnlisted
         swLockScreen.isChecked = store.showOnLockScreen

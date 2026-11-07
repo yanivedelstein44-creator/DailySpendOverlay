@@ -25,11 +25,12 @@
   - `AmountParser` – Regex לסכום, מטבע ותשלומים.
   - `DailyLedger` – סכום יומי, איפוס יומי, כפילויות שעה, החרגת תשלומים.
   - `Currencies`, `FxRates`, `SourceRules`, `DetectionLog`.
+  - `SwipeDismiss` – מתי החלקה ימינה סוגרת את הבועה (מרחק, מהירות, "גומי" שמאלה).
   - `CashBreakdown` – פירוק סכום לשטרות ומטבעות (שקל/יורו/דולר; בשקל עיגול ל-10 אגורות), ו-`describe` לשורת הארנק.
 - `data/SpendStore` – SharedPreferences. שמירת הסכום ב-`apply` (בזיכרון מיד, לדיסק ברקע), כדי שהבועה לא תחכה לדיסק.
 - `listener/` – קליטת התראות. בכל חיבור מחדש (`onListenerConnected`) יש השלמה חד-פעמית: תשלומים מהשעה האחרונה שעדיין מוצגים ולא טופלו נספרים בלי חלונית (`DeviceEvents.isCatchUpCandidate`, טביעות ב-`SpendStore.isKnownFingerprint`). באותו חיבור גם מכינים מראש את ה-Regex והחלונית (`warmUp`), כדי שהבועה תופיע מהר אחרי ההתראה. ביומן: "הגיע תוך X שנ׳" (מההתראה לאפליקציה) ו"הוצג תוך Y שנ׳" (עד שהבועה הוצגה).
 - `overlay/CashChips` + `overlay/FlowRow` – "במזומן זה היה:" (מתג `showCashBreakdown`, דלוק כברירת מחדל). `overlay/WalletViews` – הארנק כשמוגדר תקציב יומי (במקום השטרות ובמקום פס התקציב). הצבעים של הכסף האמיתי, לא העיצוב שלו.
-- `overlay/OverlayManager` – החלונית, 7 שניות, כחול/אדום. נבנית מראש ונשמרת לשימוש חוזר (`spare`); הופעה של 120ms והסכום "רץ" מיד.
+- `overlay/OverlayManager` – החלונית, כחול/אדום. בועת תשלום נשארת עד שמחליקים אותה ימינה (`overlay/SwipeTouch`, ההחלטות ב-`core/SwipeDismiss`; מתג `stayUntilSwipe`, דלוק כברירת מחדל) – בלי טיימר. כשהמתג כבוי, וגם בסיכום של פתיחת הטלפון: 7 שניות, או נגיעה. נבנית מראש ונשמרת לשימוש חוזר (`spare`); הופעה של 120ms והסכום "רץ" מיד.
 - `overlay/LockScreenNotifier` + `overlay/LockScreenBubbleActivity` – כשהטלפון נעול או המסך כבוי: "התראה במסך מלא" שמציגה את הבועה מעל מסך הנעילה ל-7 שניות (או התראה רגילה בלי אישור). החלונית מופיעה שוב בשחרור הנעילה (`overlay/ScreenState`, `core/DeviceEvents`).
 - `core/ResetUndo` – גיבוי לפני "איפוס היום" ושחזור עד סוף היום. `core/LogReplay` – שחזור מהיומן כשאין גיבוי.
 - בדיקת אמולטור: `.github/workflows/emulator-test.yml` (ידני) מריץ את `.github/emulator-test.sh` ודוחף צילומי מסך ולוגים לענף `emulator-results`.
