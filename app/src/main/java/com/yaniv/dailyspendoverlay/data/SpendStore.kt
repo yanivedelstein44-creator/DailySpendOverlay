@@ -226,11 +226,11 @@ class SpendStore private constructor(val preferences: SharedPreferences) {
         }
 
     /**
-     * בועת תשלום נשארת על המסך עד שמחליקים אותה ימינה. דלוק כברירת מחדל.
-     * כבוי = נעלמת לבד אחרי 7 שניות (כמו בגרסאות הקודמות).
+     * בועת תשלום נשארת על המסך עד שמחליקים אותה ימינה – רק אם המשתמש הדליק את המתג.
+     * כבוי (ברירת המחדל) = נעלמת לבד אחרי 7 שניות, כמו בגרסאות הקודמות.
      */
     var stayUntilSwipe: Boolean
-        get() = preferences.getBoolean(KEY_STAY_UNTIL_SWIPE, true)
+        get() = preferences.getBoolean(KEY_STAY_UNTIL_SWIPE, false)
         set(value) {
             preferences.edit().putBoolean(KEY_STAY_UNTIL_SWIPE, value).apply()
         }

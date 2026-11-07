@@ -91,7 +91,6 @@ cat > /tmp/daily_spend.xml <<'XML'
     <string name="consent_updates">no</string>
     <string name="consent_fx">no</string>
     <boolean name="asked_notification_permission" value="true" />
-    <boolean name="stay_until_swipe" value="false" />
 </map>
 XML
 adb push /tmp/daily_spend.xml /data/local/tmp/daily_spend.xml >> "$LOG" 2>&1
@@ -253,7 +252,7 @@ adb shell input tap 540 700
 sleep 1.5; overlay_windows 37b-after-tap
 adb shell input swipe 250 700 950 700 200
 sleep 1.5; shot 38-after-second-swipe; overlay_windows 38-after-second-swipe
-adb shell run-as $PKG grep -E "stay_until_swipe|swipe_hint_seen" shared_prefs/daily_spend.xml >> "$LOG" 2>&1
+adb shell run-as $PKG grep -e stay_until_swipe -e swipe_hint_seen shared_prefs/daily_spend.xml < /dev/null >> "$LOG" 2>&1
 
 step "logs"
 adb logcat -d -s DailySpend:V AndroidRuntime:E > "$OUT/logcat-app.txt" 2>&1
